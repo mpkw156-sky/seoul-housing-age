@@ -5,11 +5,9 @@ Usage: python scripts/build.py   (stdlib only, Python 3.9+)
 """
 from __future__ import annotations
 
-import csv
 import datetime as dt
 import hashlib
 import html
-import io
 import json
 import math
 import shutil
@@ -193,6 +191,11 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
     if CFG.get("adsense_client"):
         ads_head = (f'<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={esc(CFG["adsense_client"])}" '
                     f'crossorigin="anonymous"></script>')
+    verify = ""
+    if CFG.get("google_site_verification"):
+        verify += f'<meta name="google-site-verification" content="{esc(CFG["google_site_verification"])}">'
+    if CFG.get("naver_site_verification"):
+        verify += f'<meta name="naver-site-verification" content="{esc(CFG["naver_site_verification"])}">'
     ld = f'<script type="application/ld+json">{jdump(jsonld)}</script>' if jsonld else ""
     cur = ' aria-current="page"'
     nav = "".join(f'<a href="{h}"{cur if h == active else ""}>{t}</a>' for h, t in NAV)
@@ -211,6 +214,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">
+{verify}
 {'<meta name="robots" content="noindex">' if noindex else f'<link rel="canonical" href="{url}">'}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{esc(SITE)}">
@@ -242,7 +246,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <footer class="site-foot gutter"><div class="inner">
 <p>자료: 국가데이터처 주택총조사 (서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」, 공공누리 제1유형), {Y1}년 기준. 정비사업 현황은 언론 보도·서울시 발표 기준({ym_label(PROJ['asOf'])})입니다.</p>
 <p>이 사이트는 공공 통계를 시각화한 정보 서비스이며, 투자 권유나 자문이 아닙니다. 노후도는 주택 호수 기준 근사치로 법정 노후도와 다를 수 있습니다.</p>
-<div class="links"><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 내려받기</a><a href="/privacy/">개인정보처리방침</a></div>
+<div class="links"><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
 <p>© {TODAY.year} {esc(CFG.get('operator', SITE))}{contact} · 마지막 빌드 {TODAY.isoformat()}</p>
 </div></footer>
 {datas}
@@ -602,64 +606,40 @@ def build_methodology():
            body, active="/methodology/")
 
 
-def write_csvs() -> None:
-    (OUT / "data").mkdir(parents=True, exist_ok=True)
-    cols = ["자치구", "기준연도", "전체주택", "30년이상주택", "30년이상비율", "아파트", "아파트30년이상", "아파트30년이상비율",
-            "아파트20_30년", "아파트20_30년비율", "저층주택", "저층20년이상", "저층20년이상비율", "저층30년이상", "저층30년이상비율"]
-
-    def row(g, y, mm):
-        return [g, y, mm["total"], mm["old30"], mm["share30"], mm["apt"], mm["apt30"], mm["aptShare30"], mm["apt20"],
-                mm["aptNext"], mm["lowTotal"], mm["lowOld20"], mm["low20"], mm["lowOld30"], mm["low30"]]
-
-    def write(name, rows):
-        buf = io.StringIO()
-        w = csv.writer(buf)
-        w.writerow(cols)
-        w.writerows(rows)
-        (OUT / "data" / name).write_text(buf.getvalue(), encoding="utf-8-sig")
-
-    write(f"seoul_housing_age_{Y1}.csv",
-          [row(g, Y1, metrics_from(rec(Y1, i))) for i, g in enumerate(GU)] + [row("서울 전체", Y1, metrics_from(S1))])
-    write("seoul_housing_age_timeseries.csv",
-          [row(g, y, metrics_from(rec(y, i))) for y in YEARS for i, g in enumerate(GU)]
-          + [row("서울 전체", y, metrics_from(seoul_rec(y))) for y in YEARS])
-    shutil.copy(DATA / "housing_age.json", OUT / "data" / "housing_age.json")
-    shutil.copy(DATA / "projects.json", OUT / "data" / "projects.json")
-
-
 def build_data_page():
-    files = [
-        (f"/data/seoul_housing_age_{Y1}.csv", f"{Y1}년 자치구별 노후도 (CSV)", "25개 구 + 서울 전체. 엑셀에서 바로 열립니다."),
-        ("/data/seoul_housing_age_timeseries.csv", f"{YEARS[0]}~{Y1}년 연도별 노후도 (CSV)", "연도 × 자치구 전체 시계열"),
-        ("/data/housing_age.json", "집계 원자료 (JSON)", "사이트가 계산에 쓰는 자치구·연도별 주택 수"),
-        ("/data/projects.json", "정비사업 현황 (JSON)", "기호 위치, 단계, 기준월, 출처"),
+    sources = [
+        ("주택 노후기간 통계", "서울시 노후기간별 주택현황 통계",
+         "자치구·주택종류별로 지은 지 20~30년 미만, 30년 이상 된 주택 수",
+         "https://data.seoul.go.kr/bsp/wgs/dataView/data300View/474.do"),
+        ("주택 건축연도 통계", "서울시 건축연도별 주택현황 통계",
+         "자치구·주택종류·건축연도별 주택 수 (전체 주택 수와 지은 연도 분포)",
+         "https://data.seoul.go.kr/bsp/wgs/dataView/data300View/460.do"),
     ]
-    dl = "".join(f'<div class="dl card"><div><b>{esc(t)}</b><div class="desc">{esc(d)}</div></div><a class="btn" href="{h}" download>내려받기</a></div>'
-                 for h, t, d in files)
-    jsonld = {"@context": "https://schema.org", "@type": "Dataset", "name": f"서울 자치구별 주택 노후도 {YEARS[0]}–{Y1}",
-              "description": "서울 25개 자치구의 30년 이상 주택 비율, 아파트·저층 주택 노후도 (주택총조사 기반 가공)",
-              "url": f"{BASE}/data/", "license": "https://www.kogl.or.kr/info/license.do#01-tab", "inLanguage": "ko",
-              "temporalCoverage": f"{YEARS[0]}/{Y1}", "spatialCoverage": "서울특별시",
-              "creator": {"@type": "Organization", "name": SITE},
-              "isBasedOn": "국가데이터처 주택총조사 (서울 데이터 허브)",
-              "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": BASE + h} for h, _, _ in files[:2]]}
+    cards = "".join(
+        f'<div class="card src"><span class="eyebrow">{esc(k)}</span><b>{esc(t)}</b><p>{esc(d)}</p>'
+        f'<dl><dt>작성</dt><dd>국가데이터처 주택총조사</dd><dt>제공</dt><dd>서울특별시 (서울 데이터 허브)</dd>'
+        f'<dt>이용 조건</dt><dd>공공누리 제1유형 (출처 표시)</dd><dt>사이트 반영</dt><dd>{YEARS[0]}~{Y1}년</dd></dl>'
+        f'<a href="{esc(u)}" rel="noopener" target="_blank">서울 데이터 허브에서 보기 →</a></div>'
+        for k, t, d, u in sources)
     body = f"""
 <header class="page-head">
-  <div class="eyebrow">{YEARS[0]}~{Y1}년 · 무료</div>
-  <h1>데이터 내려받기</h1>
-  <p class="lede">이 사이트의 지표를 그대로 내려받을 수 있습니다. 쓰실 때는 출처를 함께 적어 주세요.</p>
+  <div class="eyebrow">{YEARS[0]}~{Y1}년 · 매년 갱신</div>
+  <h1>데이터 출처</h1>
+  <p class="lede">이 사이트의 모든 수치는 아래 공공 통계를 가공한 것입니다. 원자료는 각 기관 사이트에서 직접 확인할 수 있습니다.</p>
 </header>
-<section class="downloads" aria-label="파일 목록">{dl}</section>
+<section class="sources" aria-label="주택 통계 출처">{cards}</section>
 <div class="prose">
-  <h2>출처 표기 예시</h2>
-  <p><code>자료: 국가데이터처 주택총조사(서울 데이터 허브), 가공: {esc(SITE)} ({esc(CFG['domain'])})</code></p>
-  <h2>이용 조건</h2>
-  <p>원자료는 공공누리 제1유형으로, 출처를 밝히면 상업적 이용과 변경이 가능합니다. 이 사이트의 가공 데이터도 같은 조건으로 제공합니다. 정비사업 현황은 언론 보도를 요약한 것으로, 원문은 각 출처 링크에서 확인하세요.</p>
-  <p>열 정의는 <a href="/methodology/">방법론</a>에 있습니다.</p>
+  <h2>그 밖의 출처</h2>
+  <ul>
+    <li>정비사업 현황: 항목마다 표시한 언론 보도와 서울시 발표 (<a href="/projects/">정비사업 현황</a>에서 기준월과 함께 확인)</li>
+    <li>자치구 경계: 통계청 센서스용 행정구역경계(2013), <a href="https://github.com/southkorea/seoul-maps" rel="noopener" target="_blank">southkorea/seoul-maps</a> 가공본</li>
+  </ul>
+  <h2>갱신 주기</h2>
+  <p>원자료는 매년 4월 무렵 새 연도가 공개되며, 이 사이트는 매년 5월에 반영합니다. 지표 정의와 계산 방법은 <a href="/methodology/">방법론</a>에 있습니다.</p>
 </div>
 """
-    layout("data/", f"데이터 내려받기 – 서울 주택 노후도 CSV ({YEARS[0]}–{Y1})",
-           "서울 25개 자치구 주택 노후도 지표를 CSV와 JSON으로 무료로 내려받습니다. 공공누리 제1유형.", body, active="/data/", jsonld=jsonld)
+    layout("data/", f"데이터 출처 – {SITE}",
+           "서울 주택 노후도 사이트가 쓰는 공공 통계(국가데이터처 주택총조사, 서울 데이터 허브)의 출처와 이용 조건.", body, active="/data/")
 
 
 def build_about():
@@ -757,7 +737,6 @@ def main():
     build_gu_pages()
     build_projects()
     build_methodology()
-    write_csvs()
     build_data_page()
     build_about()
     build_privacy()
