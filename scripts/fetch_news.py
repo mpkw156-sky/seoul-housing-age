@@ -14,6 +14,7 @@ Stdlib only. Exits 0 even if one source fails, as long as the other works.
 from __future__ import annotations
 
 import argparse
+import http.cookiejar
 import datetime as dt
 import html
 import json
@@ -40,7 +41,12 @@ STRONG = ["재건축", "재개발", "정비사업", "정비구역", "재정비",
           "도시계획위원회", "주거", "집값", "주택시장", "역세권"]
 WEAK = ["주택", "정비", "재생", "택지", "용적률", "공시가격", "공시지가"]
 SEOUL_HOUSING_BODIES = {"주택실": 2, "도시공간본부": 1, "균형발전본부": 1}
+EXCLUDE = re.compile(r"의원|질의|국정감사|국감|인사발령|채용")
 PREFIX = re.compile(r"^\s*(?:[\(\[][^\)\]]{0,24}?(?:석간|조간|엠바고|자료제공|보도|배포|즉시|설명|참고)[^\)\]]{0,24}[\)\]]\s*)+")
+
+
+# 국토교통부 누리집은 쿠키를 설정한 뒤 같은 주소로 다시 보내므로(307) 쿠키를 유지합니다.
+OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
 
 def get(url: str, tries: int = 3) -> str:
@@ -48,7 +54,7 @@ def get(url: str, tries: int = 3) -> str:
     for k in range(tries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "ko-KR,ko;q=0.9"})
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with OPENER.open(req, timeout=30) as r:
                 raw = r.read()
                 cs = r.headers.get_content_charset() or "utf-8"
             return raw.decode(cs, errors="replace")
@@ -65,6 +71,8 @@ def clean(s: str) -> str:
 
 
 def score(title: str) -> int:
+    if EXCLUDE.search(title):
+        return 0
     sc = sum(3 for w in STRONG if w in title)
     sc += sum(1 for w in WEAK if w in title)
     return sc
@@ -85,6 +93,7 @@ def seoul_items(pages: int = 2) -> list[dict]:
             title = clean(t("title"))
             body, dept = t("crdns"), t("dept")
             body = "" if body == "null" else body
+            dept = "" if dept == "null" else dept
             s = score(title)
             if s == 0:
                 continue
