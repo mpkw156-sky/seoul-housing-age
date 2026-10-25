@@ -1,0 +1,96 @@
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="sym-rebuild" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="1.5" fill="var(--mk-rebuild)"></rect></symbol>
+    <symbol id="sym-redev" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="var(--mk-redev)"></circle></symbol>
+    <symbol id="sym-moa" viewBox="0 0 14 14"><path d="M7 1.5 L12.8 12 H1.2 Z" fill="var(--mk-moa)"></path></symbol>
+  </defs>
+</svg>
+
+<header class="page-head">
+  <div class="eyebrow">{{Y1}}년 기준 · 서울 25개 자치구 · 매년 갱신</div>
+  <h1>서울 주택 노후도 지도</h1>
+  <p class="lede">서울 25개 자치구에 지은 지 오래된 주택이 얼마나 되는지 보여줍니다. 전체 주택, 아파트, 단독·다세대 같은 저층 주택으로 나눠 볼 수 있고, 재건축 연한(준공 30년)과 재개발 노후도 기준(60%)에 견줘 볼 수 있습니다. 구나 기호를 누르면 세부 수치가 나옵니다.</p>
+  <div class="facts" id="facts"></div>
+</header>
+
+<div class="controls">
+  <div class="grp"><span class="gl">노후도</span>
+    <div class="seg" role="group" aria-label="노후도 지표">
+      <button type="button" id="m-share30" data-m="share30" aria-pressed="true">전체 주택 30년+</button>
+      <button type="button" id="m-delta" data-m="delta" aria-pressed="false">5년간 증가폭</button>
+    </div>
+  </div>
+  <div class="grp"><span class="gl">아파트</span>
+    <div class="seg" role="group" aria-label="아파트 지표">
+      <button type="button" id="m-apt" data-m="aptShare30" aria-pressed="false">30년+</button>
+      <button type="button" id="m-aptnext" data-m="aptNext" aria-pressed="false">20~30년 (10년 내 30년)</button>
+    </div>
+  </div>
+  <div class="grp"><span class="gl">저층 주택</span>
+    <div class="seg" role="group" aria-label="저층 주택 지표">
+      <button type="button" id="m-low20" data-m="low20" aria-pressed="false">단독·다세대 20년+</button>
+    </div>
+  </div>
+  <div class="toggles">
+    <label class="chk" for="sites-on"><input type="checkbox" id="sites-on" checked> 정비사업 진행 동네 표시</label>
+    <a class="alt-link" href="/3d/">3D로 보기 →</a>
+  </div>
+</div>
+
+<section class="board" aria-label="자치구별 지도와 순위">
+  <div class="mapbox" id="mapbox">
+    <svg id="map" role="img" aria-label="서울 자치구별 주택 노후도 지도"></svg>
+    <div class="legend" id="legend"></div>
+    <div class="mklegend" id="mklegend">
+      <span><svg aria-hidden="true"><use href="#sym-rebuild"></use></svg>재건축 진행</span>
+      <span><svg aria-hidden="true"><use href="#sym-redev"></use></svg>재개발·신속통합기획 후보지</span>
+      <span><svg aria-hidden="true"><use href="#sym-moa"></use></svg>모아타운</span>
+      <span style="color:var(--ink-3)">위치는 동 단위 대략값 · {{PROJECTS_ASOF}} 기준</span>
+    </div>
+    <div class="tip" id="tip" hidden></div>
+  </div>
+  <div class="rank">
+    <h3 id="rank-title"></h3>
+    <p class="sub" id="rank-sub"></p>
+    <div class="rows" id="rows"></div>
+  </div>
+</section>
+
+{{AD_SLOT}}
+
+<section class="notes" aria-label="{{Y1}}년 주요 내용">
+{{NOTES}}
+</section>
+
+<section class="criteria" aria-label="재건축·재개발 기준">
+  <div class="crit">
+    <h3><svg aria-hidden="true"><use href="#sym-rebuild"></use></svg>재건축 · 아파트 단지</h3>
+    <dl>
+      <dt>연한</dt><dd>준공 30년. 넘으면 안전진단 없이 착수 가능 (2025년 6월 도시정비법 개정)</dd>
+      <dt>재건축진단</dt><dd>사업시행인가 전까지 통과하면 됨</dd>
+      <dt>사업성 보정</dt><dd>서울시 정비기본계획: 땅값 낮은 곳에 보정계수 최대 2.0, 고밀 단지는 현황 용적률 인정</dd>
+    </dl>
+    <p class="read"><b>아파트 30년+</b> 보기는 지금 연한을 넘긴 아파트, <b>20~30년</b> 보기는 10년 안에 연한을 넘길 아파트의 비율입니다.</p>
+  </div>
+  <div class="crit">
+    <h3><svg aria-hidden="true"><use href="#sym-redev"></use></svg>재개발 · 저층 주거지</h3>
+    <dl>
+      <dt>필수</dt><dd>노후·불량 건축물 60% 이상, 구역 1만㎡ 이상</dd>
+      <dt>추가 (택1)</dt><dd>과소필지 40%↑ · 주택접도율 40%↓ · 호수밀도 60호/ha↑ · 노후 연면적 2/3↑</dd>
+      <dt>모아타운</dt><dd>2만~10만㎡, 노후도 50% 이상</dd>
+    </dl>
+    <p class="read"><b>단독·다세대 20년+</b> 보기의 굵은 세로선이 60%입니다. 실제 구역 지정은 블록 단위로 판단하므로, 구 평균은 경향을 보는 참고값입니다.</p>
+  </div>
+</section>
+
+<section class="gu-index" aria-label="자치구별 페이지">
+  <h2 class="sec">자치구별로 자세히 보기</h2>
+  <div class="gu-links">
+{{GU_LINKS}}
+  </div>
+</section>
+
+<details>
+  <summary>25개 자치구 전체 수치 표</summary>
+  <div class="tablewrap"><table id="tbl"></table></div>
+</details>

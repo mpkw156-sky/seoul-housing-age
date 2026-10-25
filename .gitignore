@@ -1,0 +1,7 @@
+dist/
+raw/
+__pycache__/
+*.pyc
+data/*.new.json
+report.md
+.DS_Store

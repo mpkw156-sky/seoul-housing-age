@@ -1,0 +1,11 @@
+{
+  "site_name": "서울 주택 노후도",
+  "site_tagline": "서울 25개 자치구 주택·아파트 노후도 시각화",
+  "base_url": "https://seoul-housing-age.com",
+  "domain": "seoul-housing-age.com",
+  "operator": "서울 주택 노후도 운영자",
+  "contact_email": "",
+  "adsense_client": "",
+  "adsense_slots": { "home": "", "gu": "" },
+  "kakao_adfit_units": { "home": "", "gu": "" }
+}

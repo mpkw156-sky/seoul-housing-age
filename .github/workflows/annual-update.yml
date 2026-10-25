@@ -1,0 +1,73 @@
+name: Annual data update
+
+# 매년 5월 1일 09:00 KST(00:00 UTC)에 새 통계를 받아 검증하고, 바뀐 내용이 있으면 Pull Request를 엽니다.
+# Actions 탭에서 "Run workflow"로 언제든 수동 실행할 수 있습니다.
+on:
+  schedule:
+    - cron: "0 0 1 5 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch statistics from Seoul Data Hub
+        run: python scripts/fetch_data.py --out data/housing_age.new.json --raw-dir raw
+
+      - name: Validate against current data
+        run: python scripts/validate.py --new data/housing_age.new.json --baseline data/housing_age.json --report report.md
+
+      - name: Keep raw download for audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-${{ github.run_id }}
+          path: |
+            raw/
+            report.md
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Apply and test build
+        run: |
+          mv data/housing_age.new.json data/housing_age.json
+          python scripts/build.py
+
+      - name: Open pull request if data changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- data/housing_age.json; then
+            echo "데이터 변경 없음" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          BR="data-update-$(date -u +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BR"
+          git add data/housing_age.json
+          git commit -m "data: 주택 노후도 연간 갱신 ($(date -u +%Y-%m-%d))"
+          git push origin "$BR"
+          gh pr create --base main --head "$BR" \
+            --title "주택 노후도 데이터 연간 갱신 ($(date -u +%Y-%m-%d))" \
+            --body-file report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remind to refresh redevelopment list
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "정비사업 현황(data/projects.json) 연간 점검 $(date -u +%Y)" \
+            --body "통계 갱신과 함께 data/projects.json의 단계·기준월·출처를 다시 확인해 주세요. 각 항목의 asOf를 새 기준월로 바꾸고, 상위의 asOf도 갱신합니다."

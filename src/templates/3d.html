@@ -1,0 +1,72 @@
+<header class="page-head">
+  <div class="eyebrow">{{Y1}}년 기준 · 서울 25개 자치구 · 높이 = 비율</div>
+  <h1>서울 노후도 3D</h1>
+  <p class="lede">자치구마다 기둥을 세우고, 오래된 주택 비율만큼 높이를 올렸습니다. 기둥이 높고 진할수록 오래된 주택이 많습니다. 반투명 판은 기준선이고, 판을 뚫고 올라온 구가 기준을 넘는 곳입니다.</p>
+</header>
+
+<div class="controls">
+  <div class="grp"><span class="gl">노후도</span>
+    <div class="seg" role="group" aria-label="노후도 지표">
+      <button type="button" id="m-share30" data-m="share30" aria-pressed="false">전체 주택 30년+</button>
+      <button type="button" id="m-delta" data-m="delta" aria-pressed="false">5년간 증가폭</button>
+    </div>
+  </div>
+  <div class="grp"><span class="gl">아파트</span>
+    <div class="seg" role="group" aria-label="아파트 지표">
+      <button type="button" id="m-apt" data-m="aptShare30" aria-pressed="false">30년+</button>
+      <button type="button" id="m-aptnext" data-m="aptNext" aria-pressed="false">20~30년 (10년 내 30년)</button>
+    </div>
+  </div>
+  <div class="grp"><span class="gl">저층 주택</span>
+    <div class="seg" role="group" aria-label="저층 주택 지표">
+      <button type="button" id="m-low20" data-m="low20" aria-pressed="true">단독·다세대 20년+</button>
+    </div>
+  </div>
+  <label class="chk" for="pins-on"><input type="checkbox" id="pins-on" checked> 정비사업 깃대</label>
+</div>
+
+<p class="reading" id="reading"></p>
+
+<section class="stage" id="stage" aria-label="자치구별 노후도 3D 지도">
+  <div class="labels" id="labels"></div>
+  <div class="overlay legend" id="legend"></div>
+  <div class="overlay views">
+    <div class="seg" role="group" aria-label="시점">
+      <button type="button" id="v-tilt" data-v="tilt" aria-pressed="true">비스듬히</button>
+      <button type="button" id="v-low" data-v="low" aria-pressed="false">남쪽에서</button>
+      <button type="button" id="v-top" data-v="top" aria-pressed="false">위에서</button>
+    </div>
+    <label class="chk" for="spin" style="font-size:13px"><input type="checkbox" id="spin"> 천천히 회전</label>
+  </div>
+  <div class="overlay info" id="info"></div>
+  <div class="overlay gesture">드래그: 회전 · 휠/핀치: 확대 · 오른쪽 드래그: 이동</div>
+</section>
+
+<div class="below">
+  <section class="panel" aria-label="순위">
+    <h3 id="rank-title"></h3>
+    <p class="sub" id="rank-sub"></p>
+    <div class="rows" id="rows"></div>
+  </section>
+  <section class="panel" aria-label="읽는 법">
+    <h3>읽는 법</h3>
+    <div class="howto">
+      <div class="how">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><rect x="4" y="18" width="7" height="12" fill="var(--r1)"></rect><rect x="13.5" y="10" width="7" height="20" fill="var(--r2)"></rect><rect x="23" y="4" width="7" height="26" fill="var(--r4)"></rect></svg>
+        <div><b>높이와 색은 같은 값</b><span>기둥 높이는 선택한 비율에 비례하고(바닥 = 0%), 색은 범례의 다섯 구간입니다. 멀리서는 높이로, 가까이서는 색으로 비교하세요.</span></div>
+      </div>
+      <div class="how">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><path d="M3 20 L17 14 L31 20 L17 26 Z" fill="color-mix(in srgb, var(--glass) 25%, transparent)" stroke="var(--glass)" stroke-width="1.5"></path><rect x="14" y="6" width="6" height="22" fill="var(--r3)"></rect></svg>
+        <div><b>반투명 판 = 기준선</b><span>저층 주택 보기에서는 재개발 노후도 기준 60%, 나머지 보기에서는 서울 평균입니다. 판 위로 솟은 구가 기준을 넘는 곳입니다.</span></div>
+      </div>
+      <div class="how">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><line x1="9" y1="10" x2="9" y2="30" stroke="var(--ink-3)" stroke-width="1.5"></line><rect x="5" y="5" width="8" height="8" rx="1" fill="var(--mk-rebuild)"></rect><line x1="25" y1="12" x2="25" y2="30" stroke="var(--ink-3)" stroke-width="1.5"></line><circle cx="25" cy="9" r="4.5" fill="var(--mk-redev)"></circle></svg>
+        <div><b>깃대 = 정비사업이 진행 중인 동네</b><span>파란 상자는 재건축, 보라 구슬은 재개발·신속통합기획 후보지, 초록 뿔은 모아타운입니다. 깃대를 누르면 단계와 기준일이 나옵니다.</span></div>
+      </div>
+      <div class="how">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="12" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="3 3"></circle><path d="M17 5 l3 3 l-3 3" fill="none" stroke="var(--ink-2)" stroke-width="1.5"></path></svg>
+        <div><b>돌려서 보기</b><span>‘남쪽에서’는 높이를 나란히 비교할 때, ‘위에서’는 위치를 확인할 때 좋습니다. 구를 누르면 그 구만 또렷해집니다.</span></div>
+      </div>
+    </div>
+  </section>
+</div>
