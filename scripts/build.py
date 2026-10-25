@@ -10,6 +10,7 @@ import hashlib
 import html
 import json
 import math
+import re
 import shutil
 from pathlib import Path
 
@@ -198,6 +199,12 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
         verify += f'<meta name="google-site-verification" content="{esc(CFG["google_site_verification"])}">'
     if CFG.get("naver_site_verification"):
         verify += f'<meta name="naver-site-verification" content="{esc(CFG["naver_site_verification"])}">'
+    ga = ""
+    gid = CFG.get("ga4_measurement_id", "")
+    if gid and re.fullmatch(r"G-[A-Z0-9]+", gid):
+        ga = (f'<script async src="https://www.googletagmanager.com/gtag/js?id={gid}"></script>'
+              "<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}"
+              f"gtag('js',new Date());gtag('config','{gid}',{{allow_google_signals:false,allow_ad_personalization_signals:false}});</script>")
     ld = f'<script type="application/ld+json">{jdump(jsonld)}</script>' if jsonld else ""
     cur = ' aria-current="page"'
     nav = "".join(f'<a href="{h}"{cur if h == active else ""}>{t}</a>' for h, t in NAV)
@@ -233,6 +240,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 {head_css}
+{ga}
 {ads_head}
 {ld}
 </head>
@@ -748,11 +756,24 @@ def build_privacy():
     ad_section = ("<h2>광고</h2><p>이 사이트는 Google AdSense 또는 카카오 애드핏 광고를 게재합니다. 광고 사업자는 쿠키 등을 이용해 방문 기록을 바탕으로 광고를 보여줄 수 있습니다. "
                   "Google의 개인 맞춤 광고는 <a href=\"https://adssettings.google.com\" rel=\"noopener\">광고 설정</a>에서 끌 수 있습니다.</p>"
                   if ads else "<h2>광고</h2><p>현재 광고를 게재하지 않습니다. 광고를 도입하면 이 방침을 먼저 고쳐 알립니다.</p>")
+    ga_section = ""
+    if CFG.get("ga4_measurement_id"):
+        ga_section = """<h2>방문 통계 (Google 애널리틱스)</h2>
+  <p>어떤 페이지가 얼마나 읽히는지 파악해 사이트를 고치기 위해 Google 애널리틱스 4를 씁니다. 이름·이메일·전화번호 같은 정보는 수집하지 않으며, Google 신호와 광고 개인화 기능은 껐습니다.</p>
+  <ul>
+    <li>수집 항목: 쿠키 식별자(_ga, _ga_*), 방문한 페이지와 시간, 유입 경로, 기기·브라우저 종류, 대략적인 지역(IP 주소로 추정하며 IP 주소 자체는 저장되지 않음)</li>
+    <li>보유 기간: 수집일로부터 14개월이 지나면 Google이 자동으로 삭제합니다.</li>
+    <li>국외 이전: 위 정보는 방문 시 정보통신망을 통해 Google LLC(미국)로 전송·보관됩니다. 이전 목적은 방문 통계 분석이며, 원하지 않으면 아래 방법으로 거부할 수 있습니다.</li>
+    <li>거부 방법: 브라우저 설정에서 쿠키 저장을 차단하거나, Google의 <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">애널리틱스 차단 브라우저 부가기능</a>을 설치하면 됩니다. 쿠키를 막아도 사이트 이용에는 지장이 없습니다.</li>
+  </ul>
+  <p>자세한 내용: <a href="https://policies.google.com/technologies/partner-sites?hl=ko" rel="noopener">Google이 파트너 사이트의 정보를 사용하는 방식</a></p>"""
+    lede_tail = ("는 회원가입, 로그인, 문의 양식이 없으며 이용자의 이름·연락처 같은 개인정보를 직접 수집하지 않습니다. 다만 방문 통계를 위해 쿠키를 씁니다."
+                 if CFG.get("ga4_measurement_id") else "는 회원가입, 로그인, 문의 양식이 없으며 이용자의 개인정보를 직접 수집하지 않습니다.")
     body = f"""
 <header class="page-head">
   <div class="eyebrow">시행일 {TODAY.isoformat()}</div>
   <h1>개인정보처리방침</h1>
-  <p class="lede">{esc(SITE)}({esc(CFG['domain'])})는 회원가입, 로그인, 문의 양식이 없으며 이용자의 개인정보를 직접 수집하지 않습니다.</p>
+  <p class="lede">{esc(SITE)}({esc(CFG['domain'])}){lede_tail}</p>
 </header>
 <div class="prose">
   <h2>브라우저에 저장하는 정보</h2>
@@ -762,6 +783,7 @@ def build_privacy():
     <li>호스팅: GitHub Pages. 접속 시 IP 주소 등 기술 정보가 GitHub의 서버 로그에 남을 수 있습니다 (<a href="https://docs.github.com/ko/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub 개인정보처리방침</a>).</li>
     <li>글꼴: Google Fonts. 글꼴을 내려받을 때 IP 주소가 Google에 전달될 수 있습니다.</li>
   </ul>
+  {ga_section}
   {ad_section}
   <h2>문의</h2>
   <p>개인정보 관련 문의: {contact}</p>

@@ -63,6 +63,10 @@ cd dist && python -m http.server 8000   # http://localhost:8000
 
 `config.json`의 `adsense_client`(예: `ca-pub-1234...`)와 `adsense_slots`를 채우면 광고 스크립트, 광고 자리, `ads.txt`, 개인정보처리방침의 광고 문단이 자동으로 들어갑니다. 카카오 애드핏은 `kakao_adfit_units`에 광고 단위 ID를 넣습니다.
 
+### 방문 통계 (GA4)
+
+`config.json`의 `ga4_measurement_id`에 측정 ID(`G-…`)를 넣으면 모든 페이지에 Google 애널리틱스 태그가 들어가고, 개인정보처리방침에 쿠키·국외 이전·거부 방법 안내가 자동으로 붙습니다. 비우면 둘 다 빠집니다. Google 신호와 광고 개인화는 꺼 둡니다.
+
 ### 공유 이미지 다시 만들기
 
 `src/assets/og.png`는 한 번 만들어 둔 이미지입니다. 수치를 새로 반영하려면 `pip install playwright && playwright install chromium` 후 `python scripts/make_og.py`를 실행합니다.
