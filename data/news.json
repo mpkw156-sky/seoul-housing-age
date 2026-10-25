@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-25T22:22+09:00",
+ "updated": "2026-10-25T22:23+09:00",
  "items": [
   {
    "id": "seoul-468710",
@@ -49,6 +49,36 @@
    "dept": "도시공간본부 신속통합기획과",
    "title": "재해 취약 주거지에서 상도권역 생활 중심지로…상도동 201 일대 신속통합기획 확정",
    "url": "https://www.seoul.go.kr/news/news_report.do#view/468529",
+   "src": "seoul"
+  },
+  {
+   "id": "molit-95092507",
+   "date": "2026-10-20",
+   "time": "",
+   "org": "국토교통부",
+   "dept": "주택토지",
+   "title": "「민간임대주택에 관한 특별법」 시행령 개정안, 20일 국무회의 의결",
+   "url": "https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?lcmspage=1&id=95092507",
+   "src": "molit"
+  },
+  {
+   "id": "molit-95092505",
+   "date": "2026-10-20",
+   "time": "",
+   "org": "국토교통부",
+   "dept": "주택토지",
+   "title": "서울 동자동 쪽방촌 공공주택지구 지정, 도심 속 2,150호 규모의 주택공급 추진",
+   "url": "https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?lcmspage=1&id=95092505",
+   "src": "molit"
+  },
+  {
+   "id": "seoul-468457",
+   "date": "2026-10-19",
+   "time": "06:41",
+   "org": "서울특별시",
+   "dept": "주택실 모아주택과",
+   "title": "서울시, 조합설립 공공지원 모아주택까지 확대… 올해 첫 시행",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/468457",
    "src": "seoul"
   }
  ]
