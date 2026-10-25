@@ -150,6 +150,20 @@ table.data tr.seoul td { font-weight: 700; }
 .src dd { margin: 0; }
 .src a { font-size: 14px; }
 
+/* news */
+.news-days { display: grid; gap: 22px; }
+.news-day { display: grid; gap: 8px; }
+.news-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.news-item { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; display: grid; gap: 3px; }
+.news-item a { text-decoration: none; font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
+.news-item a:hover { text-decoration: underline; }
+.news-item .ext { margin-left: 6px; font-size: 12px; color: var(--ink-3); }
+.news-item .meta { font-size: 12.5px; color: var(--ink-3); }
+.news-home { display: grid; gap: 10px; }
+.news-home-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 14px; }
+.news-home-head a { font-size: 14px; }
+.news-note { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+
 /* ad / sponsor slots: render nothing until configured */
 .slot { display: grid; place-items: center; min-height: 0; }
 .slot .slot-label { font-size: 11px; color: var(--ink-3); letter-spacing: .06em; }

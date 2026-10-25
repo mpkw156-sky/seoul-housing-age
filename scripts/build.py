@@ -23,6 +23,8 @@ CFG = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
 H = json.loads((DATA / "housing_age.json").read_text(encoding="utf-8"))
 GEOJSON = json.loads((DATA / "seoul_gu.geojson").read_text(encoding="utf-8"))
 PROJ = json.loads((DATA / "projects.json").read_text(encoding="utf-8"))
+NEWS_FILE = DATA / "news.json"
+NEWS = json.loads(NEWS_FILE.read_text(encoding="utf-8")) if NEWS_FILE.exists() else {"updated": "", "items": []}
 
 BASE = CFG["base_url"].rstrip("/")
 SITE = CFG["site_name"]
@@ -180,7 +182,7 @@ def ad(slot: str) -> str:
     return ""
 
 
-NAV = [("/", "지도"), ("/3d/", "3D"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/methodology/", "방법론"), ("/data/", "데이터")]
+NAV = [("/", "지도"), ("/3d/", "3D"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "뉴스"), ("/methodology/", "방법론"), ("/data/", "데이터")]
 
 
 def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css=(), js=(), data=None, geo=None,
@@ -246,7 +248,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <footer class="site-foot gutter"><div class="inner">
 <p>자료: 국가데이터처 주택총조사 (서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」, 공공누리 제1유형), {Y1}년 기준. 정비사업 현황은 언론 보도·서울시 발표 기준({ym_label(PROJ['asOf'])})입니다.</p>
 <p>이 사이트는 공공 통계를 시각화한 정보 서비스이며, 투자 권유나 자문이 아닙니다. 노후도는 주택 호수 기준 근사치로 법정 노후도와 다를 수 있습니다.</p>
-<div class="links"><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
+<div class="links"><a href="/news/">보도자료 모음</a><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
 <p>© {TODAY.year} {esc(CFG.get('operator', SITE))}{contact} · 마지막 빌드 {TODAY.isoformat()}</p>
 </div></footer>
 {datas}
@@ -412,7 +414,7 @@ def build_home():
     links = "\n".join(f'<a href="{gu_link(r["gu"])}">{esc(r["gu"])}<span>{r["share30"]}%</span></a>'
                       for r in sorted(ROWS, key=lambda r: -r["share30"]))
     body = tpl("home.html", Y1=Y1, NOTES=home_notes(), GU_LINKS=links, AD_SLOT=ad("home"),
-               PROJECTS_ASOF=ym_label(PROJ["asOf"]))
+               PROJECTS_ASOF=ym_label(PROJ["asOf"]), NEWS=home_news())
     jsonld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE, "url": BASE + "/",
               "inLanguage": "ko", "description": CFG["site_tagline"]}
     layout("", f"{SITE} 지도 – 서울 25개 자치구 주택·아파트 노후도 ({Y1})",
@@ -563,6 +565,70 @@ def build_projects():
            body, active="/projects/")
 
 
+# ---------------------------------------------------------------- news (official press releases: title + link only)
+WEEKDAY = "월화수목금토일"
+NEWS_SOURCES = [
+    ("서울특별시 보도자료", "https://www.seoul.go.kr/news/news_report.do"),
+    ("국토교통부 보도자료", "https://www.molit.go.kr/USR/NEWS/m_71/lst.jsp"),
+]
+
+
+def day_label(iso: str) -> str:
+    d = dt.date.fromisoformat(iso)
+    return f"{d.year}년 {d.month}월 {d.day}일 ({WEEKDAY[d.weekday()]})"
+
+
+def news_item(it: dict) -> str:
+    meta = " · ".join(x for x in (it["org"], it.get("dept", ""), it["date"].replace("-", ".") + (" " + it["time"] if it.get("time") else "")) if x)
+    return (f'<li class="news-item"><a href="{esc(it["url"])}" target="_blank" rel="noopener nofollow">{esc(it["title"])}'
+            f'<span class="ext" aria-label="새 창에서 원문 열기">↗</span></a><span class="meta">{esc(meta)}</span></li>')
+
+
+def home_news() -> str:
+    items = NEWS["items"][:3]
+    if not items:
+        return ""
+    return (f'<section class="news-home" aria-label="최근 보도자료"><div class="news-home-head"><h2 class="sec">서울 주택·부동산 최근 보도자료</h2>'
+            f'<a href="/news/">전체 보기 →</a></div><ul class="news-list">{"".join(news_item(i) for i in items)}</ul>'
+            f'<p class="news-note">서울시·국토교통부가 발표한 보도자료의 제목과 원문 링크입니다.</p></section>')
+
+
+def build_news():
+    days: dict[str, list] = {}
+    for it in NEWS["items"]:
+        days.setdefault(it["date"], []).append(it)
+    keys = sorted(days, reverse=True)[:45]
+    if keys:
+        groups = "".join(f'<section class="news-day"><h2 class="sec">{day_label(k)}</h2><ul class="news-list">'
+                         + "".join(news_item(i) for i in days[k]) + "</ul></section>" for k in keys)
+    else:
+        groups = '<p class="lede">아직 모은 보도자료가 없습니다. 매일 저녁 자동으로 채워집니다.</p>'
+    upd = NEWS.get("updated", "")
+    upd_txt = f"{upd[:10].replace('-', '.')} {upd[11:16]} 갱신" if upd else "매일 갱신"
+    srcs = "".join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>' for t, u in NEWS_SOURCES)
+    body = f"""
+<header class="page-head">
+  <div class="eyebrow">{upd_txt} · 하루 최대 3건</div>
+  <h1>서울 주택·부동산 보도자료</h1>
+  <p class="lede">서울특별시와 국토교통부가 낸 보도자료 가운데 서울의 주택·정비사업·부동산과 관련된 것을 매일 골라 제목과 원문 링크로 모았습니다. 내용은 제목을 눌러 각 기관 누리집에서 확인해 주세요.</p>
+</header>
+<div class="news-days">{groups}</div>
+<div class="prose news-about">
+  <h2>모으는 기준</h2>
+  <ul>
+    <li>출처: {srcs.replace('<li>', '').replace('</li>', ', ').rstrip(', ')}. 언론사 기사는 싣지 않습니다.</li>
+    <li>제목에 재건축·재개발·정비사업·모아타운·신속통합기획·주택공급·전세·실거래 같은 말이 들어간 보도자료를 자동으로 고르고, 하루 최대 3건까지 싣습니다. 발표가 적은 날이나 주말에는 1건 이하일 수 있습니다.</li>
+    <li>제목, 발표 기관·부서, 날짜, 원문 링크만 표시합니다. 본문·요약·사진·첨부파일은 옮기지 않으며, 제목 앞의 "(석간)", "(엠바고…)" 같은 배포 표시는 뺍니다.</li>
+    <li>고르는 방식이 자동이라 관련이 적은 자료가 섞이거나 중요한 자료가 빠질 수 있습니다. 최근 180일치만 보관합니다.</li>
+    <li>이 목록은 정보 제공용이며 투자 권유나 자문이 아닙니다. 정책 내용은 반드시 원문으로 확인해 주세요.</li>
+  </ul>
+</div>
+"""
+    layout("news/", f"서울 주택·부동산 보도자료 모음 – {SITE}",
+           "서울시·국토교통부의 서울 주택·재건축·재개발·부동산 관련 보도자료를 매일 골라 제목과 원문 링크로 모았습니다.",
+           body, active="/news/")
+
+
 def build_methodology():
     body = f"""
 <header class="page-head">
@@ -633,6 +699,7 @@ def build_data_page():
   <ul>
     <li>정비사업 현황: 항목마다 표시한 언론 보도와 서울시 발표 (<a href="/projects/">정비사업 현황</a>에서 기준월과 함께 확인)</li>
     <li>자치구 경계: 통계청 센서스용 행정구역경계(2013), <a href="https://github.com/southkorea/seoul-maps" rel="noopener" target="_blank">southkorea/seoul-maps</a> 가공본</li>
+    <li>보도자료 모음: <a href="https://www.seoul.go.kr/news/news_report.do" rel="noopener" target="_blank">서울특별시 보도자료</a>, <a href="https://www.molit.go.kr/USR/NEWS/m_71/lst.jsp" rel="noopener" target="_blank">국토교통부 보도자료</a>의 제목과 원문 링크 (<a href="/news/">보도자료 모음</a>, 매일 갱신)</li>
   </ul>
   <h2>갱신 주기</h2>
   <p>원자료는 매년 4월 무렵 새 연도가 공개되며, 이 사이트는 매년 5월에 반영합니다. 지표 정의와 계산 방법은 <a href="/methodology/">방법론</a>에 있습니다.</p>
@@ -663,6 +730,7 @@ def build_about():
     <li>주택 통계: 국가데이터처 주택총조사 – 서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」 (공공누리 제1유형) · <a href="https://data.seoul.go.kr/" rel="noopener">data.seoul.go.kr</a></li>
     <li>자치구 경계: 통계청 센서스용 행정구역경계(2013), <a href="https://github.com/southkorea/seoul-maps" rel="noopener">southkorea/seoul-maps</a> 가공본</li>
     <li>정비사업 현황: 각 항목에 표시한 언론 보도와 서울시 발표 (<a href="/projects/">정비사업 현황</a>)</li>
+    <li>보도자료 모음: 서울특별시·국토교통부 보도자료의 제목과 원문 링크만 표시합니다. 저작권은 각 기관에 있습니다 (<a href="/news/">보도자료 모음</a>)</li>
     <li>3D 그래픽: three.js (MIT License)</li>
     <li>글꼴: IBM Plex Sans KR, IBM Plex Mono (SIL Open Font License, Google Fonts)</li>
   </ul>
@@ -736,6 +804,7 @@ def main():
     build_gu_index()
     build_gu_pages()
     build_projects()
+    build_news()
     build_methodology()
     build_data_page()
     build_about()

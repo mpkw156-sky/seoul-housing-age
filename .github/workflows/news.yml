@@ -1,0 +1,48 @@
+name: Daily press releases
+
+# 매일 12:20, 19:20 (KST)에 서울시·국토교통부 보도자료 중 서울 주택·부동산 관련 자료를 골라
+# data/news.json에 추가하고, 바뀐 내용이 있으면 사이트를 다시 배포합니다.
+# 제목·기관·날짜·원문 링크만 저장하고, 본문·사진·첨부파일은 가져오지 않습니다.
+on:
+  schedule:
+    - cron: "20 3 * * *"
+    - cron: "20 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Collect press releases
+        run: python scripts/fetch_news.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Test build
+        run: python scripts/build.py
+
+      - name: Commit and redeploy if changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- data/news.json && git ls-files --error-unmatch data/news.json >/dev/null 2>&1; then
+            echo "새 보도자료 없음" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/news.json
+          git commit -m "news: 보도자료 갱신 $(TZ=Asia/Seoul date +%Y-%m-%d)"
+          git push origin HEAD:main
+          gh workflow run deploy.yml --ref main
