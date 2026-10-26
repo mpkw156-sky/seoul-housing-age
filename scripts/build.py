@@ -46,6 +46,31 @@ LOGO = ('<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="13" width="5
 
 esc = html.escape
 
+# 마스코트: 안경 쓴 작은 집 (이 사이트용 창작 캐릭터)
+def mascot(size: int = 96, cls: str = "mascot") -> str:
+    return (f'<svg class="{cls}" width="{size}" height="{size}" viewBox="0 0 120 120" aria-hidden="true">'
+            '<path d="M14 58 L60 18 L106 58" fill="none" stroke="var(--m-line)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path>'
+            '<rect x="78" y="22" width="12" height="22" rx="2" fill="var(--m-roof)" stroke="var(--m-line)" stroke-width="4"></rect>'
+            '<path d="M24 54 L60 24 L96 54 V102 a8 8 0 0 1 -8 8 H32 a8 8 0 0 1 -8 -8 Z" fill="var(--m-body)" stroke="var(--m-line)" stroke-width="5" stroke-linejoin="round"></path>'
+            '<circle cx="47" cy="70" r="9" fill="var(--m-glass)" stroke="var(--m-line)" stroke-width="4"></circle>'
+            '<circle cx="73" cy="70" r="9" fill="var(--m-glass)" stroke="var(--m-line)" stroke-width="4"></circle>'
+            '<path d="M56 70 H64" stroke="var(--m-line)" stroke-width="4" stroke-linecap="round"></path>'
+            '<circle cx="47" cy="71" r="2.6" fill="var(--m-line)"></circle><circle cx="73" cy="71" r="2.6" fill="var(--m-line)"></circle>'
+            '<path d="M50 88 Q60 95 70 88" fill="none" stroke="var(--m-line)" stroke-width="4" stroke-linecap="round"></path>'
+            '<circle cx="36" cy="86" r="4.5" fill="var(--m-cheek)"></circle><circle cx="84" cy="86" r="4.5" fill="var(--m-cheek)"></circle>'
+            '</svg>')
+
+
+def tens(share: float) -> int:
+    """비율을 '10채 중 몇 채'로 (반올림)."""
+    return max(0, min(10, int(share / 10 + 0.5)))
+
+
+def houses(n_on: int, label: str) -> str:
+    one = ('<path d="M3 12 L12 4 L21 12 V20 a1.5 1.5 0 0 1 -1.5 1.5 H4.5 A1.5 1.5 0 0 1 3 20 Z"></path>')
+    cells = "".join(f'<svg class="hs{" on" if k < n_on else ""}" viewBox="0 0 24 24" aria-hidden="true">{one}</svg>' for k in range(10))
+    return f'<div class="houses" role="img" aria-label="{esc(label)}">{cells}</div>'
+
 
 def fmt(n: int) -> str:
     return f"{n:,}"
@@ -238,7 +263,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Jua&display=swap">
 {head_css}
 {ga}
 {ads_head}
@@ -247,7 +272,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <body>
 <a class="skip" href="#main">본문 바로가기</a>
 <header class="site-head gutter"><div class="inner">
-<a class="brand" href="/">{LOGO}{esc(SITE)}</a>
+<a class="brand" href="/">{mascot(30, "brand-mark")}{esc(SITE)}</a>
 <nav class="site-nav" aria-label="주요 메뉴">{nav}</nav>
 </div></header>
 <main id="main" class="wrap gutter">
@@ -255,7 +280,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 </main>
 <footer class="site-foot gutter"><div class="inner">
 <p>자료: 국가데이터처 주택총조사 (서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」, 공공누리 제1유형), {Y1}년 기준. 정비사업 현황은 언론 보도·서울시 발표 기준({ym_label(PROJ['asOf'])})입니다.</p>
-<p>이 사이트는 공공 통계를 시각화한 정보 서비스이며, 투자 권유나 자문이 아닙니다. 노후도는 주택 호수 기준 근사치로 법정 노후도와 다를 수 있습니다.</p>
+<p>이 사이트는 공공 통계로 집 나이를 보여주는 정보 서비스예요. 투자 권유나 자문이 아니에요. 노후도는 주택 호수로 계산한 근사치라 법정 노후도와 다를 수 있어요.</p>
 <div class="links"><a href="/news/">보도자료 모음</a><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
 <p>© {TODAY.year} {esc(CFG.get('operator', SITE))}{contact} · 마지막 빌드 {TODAY.isoformat()}</p>
 </div></footer>
@@ -404,16 +429,16 @@ def home_notes() -> str:
     over = [r for r in ROWS if r["low20"] >= 60]
     a1, a2 = by_apt[0], by_apt[1]
     notes = [
-        (f"아파트가 가장 오래된 곳은 {a1['gu']}",
-         f"{a1['gu']}는 아파트 {fmt(a1['apt'])}호 중 {fmt(a1['apt30'])}호({a1['aptShare30']}%)가 준공 30년을 넘겼습니다. "
-         f"{a2['gu']}가 {a2['aptShare30']}%로 뒤를 잇습니다. 서울 전체 아파트의 30년 이상 비율은 {SEOUL['aptShare30']}%입니다."),
-        (f"저층 주택은 {len(over)}개 구가 60%를 넘는다",
-         f"단독·다세대·연립 같은 저층 주택 가운데 20년 이상 된 비율은 서울 전체 {SEOUL['low20']}%입니다. "
-         + ", ".join(r["gu"] + " " + str(r["low20"]) + "%" for r in by_low[:3]) + " 순으로 높습니다."),
-        (f"5년 새 가장 빨리 늙은 곳은 {by_d[0]['gu']}",
-         f"{by_d[0]['gu']}의 30년 이상 주택 비율은 {Y0}년 {by_d[0]['share30_prev']}%에서 {Y1}년 {by_d[0]['share30']}%로 "
-         f"{by_d[0]['delta']:+.1f}%p 바뀌었습니다. 10년 안에 30년을 넘길 20~30년 된 아파트 비율은 "
-         + ", ".join(r["gu"] + " " + str(r["aptNext"]) + "%" for r in by_next[:3]) + " 순으로 높습니다."),
+        (f"아파트가 가장 나이 든 동네는 {a1['gu']}",
+         f"{a1['gu']} 아파트 {fmt(a1['apt'])}호 중 {fmt(a1['apt30'])}호({a1['aptShare30']}%)가 서른 살을 넘겼어요. "
+         f"그다음은 {a2['gu']}({a2['aptShare30']}%)예요. 서울 전체로 보면 아파트 {SEOUL['aptShare30']}%가 서른 살이 넘었어요."),
+        (f"저층 주택은 {len(over)}개 구가 60%를 넘어요",
+         f"단독·다세대·연립 같은 저층 주택 가운데 스무 살 넘은 집은 서울 전체 {SEOUL['low20']}%예요. "
+         + ", ".join(r["gu"] + " " + str(r["low20"]) + "%" for r in by_low[:3]) + " 순으로 많아요."),
+        (f"5년 새 가장 빨리 나이 든 곳은 {by_d[0]['gu']}",
+         f"{by_d[0]['gu']}는 서른 살 넘은 집 비율이 {Y0}년 {by_d[0]['share30_prev']}%에서 {Y1}년 {by_d[0]['share30']}%로 "
+         f"{by_d[0]['delta']:+.1f}%p 늘었어요. 곧 서른 살이 되는 20대 아파트는 "
+         + ", ".join(r["gu"] + " " + str(r["aptNext"]) + "%" for r in by_next[:3]) + " 순으로 많아요."),
     ]
     return "\n".join(f'<div class="note"><h3>{esc(t)}</h3><p>{esc(p)}</p></div>' for t, p in notes)
 
@@ -422,7 +447,9 @@ def build_home():
     links = "\n".join(f'<a href="{gu_link(r["gu"])}">{esc(r["gu"])}<span>{r["share30"]}%</span></a>'
                       for r in sorted(ROWS, key=lambda r: -r["share30"]))
     body = tpl("home.html", Y1=Y1, NOTES=home_notes(), GU_LINKS=links, AD_SLOT=ad("home"),
-               PROJECTS_ASOF=ym_label(PROJ["asOf"]), NEWS=home_news())
+               PROJECTS_ASOF=ym_label(PROJ["asOf"]), NEWS=home_news(), MASCOT=mascot(112),
+               TENS=tens(SEOUL["share30"]), HOUSES=houses(tens(SEOUL["share30"]), f"서울 집 10채 중 {tens(SEOUL['share30'])}채가 서른 살 이상"),
+               APT_TENS=tens(SEOUL["aptShare30"]))
     jsonld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE, "url": BASE + "/",
               "inLanguage": "ko", "description": CFG["site_tagline"]}
     layout("", f"{SITE} 지도 – 서울 25개 자치구 주택·아파트 노후도 ({Y1})",
@@ -457,28 +484,29 @@ def build_gu_pages():
     for k, r in enumerate(order):
         g, i = r["gu"], GU.index(r["gu"])
         rk = RANK[g]
-        cmp_ = "높습니다" if r["share30"] > SEOUL["share30"] else "낮습니다"
-        low_cmp = "넘습니다" if r["low20"] >= 60 else "밑돕니다"
-        dverb = "늘었습니다" if r["delta"] >= 0 else "줄었습니다"
+        cmp_ = "많아요" if r["share30"] > SEOUL["share30"] else "적어요"
+        low_cmp = "넘어요" if r["low20"] >= 60 else "밑돌아요"
+        dverb = "늘었어요" if r["delta"] >= 0 else "줄었어요"
+        n10 = tens(r["share30"])
         paras = [
-            f"{g}의 주택 {fmt(r['total'])}호 가운데 지은 지 30년이 넘은 주택은 {fmt(r['old30'])}호({r['share30']}%)로, "
-            + ("서울 25개 자치구 중 가장 높습니다. " if rk == 1 else f"서울 25개 자치구 중 {rk}번째로 높습니다. ") + f"서울 평균({SEOUL['share30']}%)보다 {cmp_}.",
-            f"아파트는 {fmt(r['apt'])}호 중 {fmt(r['apt30'])}호({r['aptShare30']}%)가 재건축 연한인 준공 30년을 넘겼습니다. "
-            f"지은 지 20~30년 된 아파트도 {fmt(r['apt20'])}호({r['aptNext']}%) 있어, 10년 안에 차례로 30년을 넘깁니다.",
-            f"단독·다세대·연립 같은 저층 주택은 {fmt(r['lowTotal'])}호이고, 이 중 {r['low20']}%가 20년 이상 됐습니다. "
-            f"구 평균으로는 재개발 노후도 기준선(60%)을 {low_cmp}. 실제 정비구역 지정은 블록 단위 노후도와 접도율 등으로 판단합니다.",
-            f"5년 전인 {Y0}년에는 30년 이상 주택 비율이 {r['share30_prev']}%였고, {Y1}년까지 {abs(r['delta']):.1f}%p {dverb}.",
+            f"{g} 집 {fmt(r['total'])}호 가운데 서른 살(준공 30년)이 넘은 집은 {fmt(r['old30'])}호({r['share30']}%)예요. "
+            + ("서울 25개 자치구 중 가장 많아요. " if rk == 1 else f"서울 25개 자치구 중 {rk}번째로 많아요. ") + f"서울 평균({SEOUL['share30']}%)보다 {cmp_}.",
+            f"아파트는 {fmt(r['apt'])}호 중 {fmt(r['apt30'])}호({r['aptShare30']}%)가 재건축 연한인 서른 살을 넘겼어요. "
+            f"20대 아파트도 {fmt(r['apt20'])}호({r['aptNext']}%) 있어서, 10년 안에 차례로 서른 살이 돼요.",
+            f"단독·다세대·연립 같은 저층 주택은 {fmt(r['lowTotal'])}호이고, 이 중 {r['low20']}%가 스무 살을 넘었어요. "
+            f"구 평균으로는 재개발 노후도 기준선(60%)을 {low_cmp}. 실제 정비구역 지정은 블록 단위 노후도와 접도율 등으로 따져요.",
+            f"5년 전인 {Y0}년에는 서른 살 넘은 집이 {r['share30_prev']}%였고, {Y1}년까지 {abs(r['delta']):.1f}%p {dverb}.",
         ]
         stats = "".join([
-            stat("30년 이상 주택", f"{r['share30']}%", f"서울 {rk}위 / 25 · 평균 {SEOUL['share30']}%"),
-            stat("아파트 30년 이상", f"{r['aptShare30']}%", f"{fmt(r['apt30'])}호 / {fmt(r['apt'])}호"),
-            stat("저층 주택 20년 이상", f"{r['low20']}%", "재개발 노후도 기준 60%"),
-            stat(f"{Y0}→{Y1} 변화", f"{r['delta']:+.1f}%p", f"{r['share30_prev']}% → {r['share30']}%"),
+            stat("서른 살 넘은 집", f"{r['share30']}%", f"서울 {rk}위 / 25 · 평균 {SEOUL['share30']}%"),
+            stat("서른 살 넘은 아파트", f"{r['aptShare30']}%", f"{fmt(r['apt30'])}호 / {fmt(r['apt'])}호"),
+            stat("스무 살 넘은 저층 주택", f"{r['low20']}%", "재개발 노후도 기준 60%"),
+            stat(f"5년 새 변화", f"{r['delta']:+.1f}%p", f"{Y0}년 {r['share30_prev']}% → {r['share30']}%"),
         ])
         projs = [p for p in PROJ["items"] if p["gu"] == g]
         proj_html = ""
         if projs:
-            proj_html = (f'<section class="projects" aria-label="정비사업 진행 현황"><h2>정비사업 진행 동네</h2>'
+            proj_html = (f'<section class="projects" aria-label="정비사업 진행 현황"><h2>정비사업이 진행 중인 동네</h2>'
                          + "".join(project_card(p, show_gu=False) for p in projs)
                          + f'<p class="crumbs">전체 목록은 <a href="/projects/">정비사업 현황</a>에 있습니다.</p></section>')
         rows_html = ""
@@ -496,22 +524,29 @@ def build_gu_pages():
         body = f"""
 <nav class="crumbs" aria-label="현재 위치"><a href="/">지도</a> › <a href="/gu/">자치구</a> › {esc(g)}</nav>
 <header class="page-head">
-  <div class="eyebrow">{Y1}년 기준 · 30년 이상 주택 비율 {rk}위 / 25</div>
-  <h1>{esc(g)} 주택 노후도</h1>
-  <p class="lede">{esc(paras[0])}</p>
+  <div class="eyebrow">{esc(g)} 주택 노후도 · {Y1}년 기준 · 25개 구 중 {rk}위</div>
+  <h1>{esc(g)} 집은 몇 살일까요?</h1>
 </header>
+<section class="hello" aria-label="한눈에 보기">
+  {mascot(96)}
+  <div class="bubble">
+    <p class="say">{esc(g)} 집 10채 중 <b>{n10}채</b>는 서른 살이 넘었어요.</p>
+    {houses(n10, f"{g} 집 10채 중 {n10}채가 서른 살 이상")}
+    <p class="small">{esc(paras[0])}</p>
+  </div>
+</section>
 <div class="statrow">{stats}</div>
 <div class="gu-grid">
   <section class="card summary" aria-label="요약">{''.join(f'<p>{esc(p)}</p>' for p in paras[1:])}</section>
   <section class="card locator" aria-label="위치">{locator_svg(g)}</section>
 </div>
 <section class="card chart" aria-label="연도별 추이">
-  <h2>30년 이상 된 주택 비율 추이</h2>
+  <h2>서른 살 넘은 집, 해마다 얼마나 늘었을까요?</h2>
   <div class="chart-legend"><span><i style="background:var(--accent)"></i>{esc(g)}</span><span><i style="background:var(--seoul)"></i>서울 전체 (점선)</span></div>
   <div class="tablewrap">{trend_svg(g)}</div>
 </section>
 <section class="card chart" aria-label="지은 연도별 주택 수">
-  <h2>지은 연도별 주택 수 ({H['bandsYear']}년)</h2>
+  <h2>언제 지은 집이 많을까요? ({H['bandsYear']}년)</h2>
   <div class="chart-legend"><span><i class="box" style="background:var(--r3)"></i>아파트</span><span><i class="box" style="background:var(--r1)"></i>단독·다세대·연립 등 저층 주택</span></div>
   <div class="tablewrap">{bands_svg(g)}</div>
 </section>
