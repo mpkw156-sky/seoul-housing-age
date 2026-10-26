@@ -3,11 +3,11 @@ const GEO = JSON.parse(document.getElementById("geo-data").textContent);
 const CANDS = [];
 const S = DATA.seoul;
 const METRICS = {
-  share30: { label: "전체 주택 중 30년 이상 비율", unit: "%", breaks: [20, 25, 30, 40], ticks: ["20% 미만", "20–25%", "25–30%", "30–40%", "40% 이상"], ref: S.share30, sub: "세로선: 서울 평균 " + S.share30 + "%" },
-  delta: { label: `30년 이상 비율, ${DATA.y0}→${DATA.y1} 증가폭`, unit: "%p", plus: true, breaks: [5, 10, 15, 20], ticks: ["5%p 미만", "5–10", "10–15", "15–20", "20%p 이상"], ref: +(S.share30 - S.share30_prev).toFixed(1), sub: "세로선: 서울 전체 +" + (S.share30 - S.share30_prev).toFixed(1) + "%p" },
-  aptShare30: { label: "아파트 중 30년 이상 비율 (재건축 대상)", unit: "%", breaks: [10, 20, 30, 40], ticks: ["10% 미만", "10–20%", "20–30%", "30–40%", "40% 이상"], ref: S.aptShare30, sub: "세로선: 서울 평균 " + S.aptShare30 + "%" },
-  aptNext: { label: "아파트 중 20~30년 비율 (10년 내 재건축 대상)", unit: "%", breaks: [25, 35, 45, 50], ticks: ["25% 미만", "25–35%", "35–45%", "45–50%", "50% 이상"], ref: S.aptNext, sub: "세로선: 서울 평균 " + S.aptNext + "%" },
-  low20: { label: "단독·다세대 등 저층 주택 중 20년 이상 비율 (재개발)", unit: "%", breaks: [50, 55, 60, 65], ticks: ["50% 미만", "50–55%", "55–60%", "60–65%", "65% 이상"], ref: 60, thr: true, sub: "굵은 선: 재개발 노후도 기준 60% · 서울 평균 " + S.low20 + "%" }
+  share30: { label: "서른 살 넘은 집 비율", unit: "%", breaks: [20, 25, 30, 40], ticks: ["20% 미만", "20–25%", "25–30%", "30–40%", "40% 이상"], ref: S.share30, sub: "세로선: 서울 평균 " + S.share30 + "%" },
+  delta: { label: `서른 살 넘은 집, ${DATA.y0}→${DATA.y1} 늘어난 폭`, unit: "%p", plus: true, breaks: [5, 10, 15, 20], ticks: ["5%p 미만", "5–10", "10–15", "15–20", "20%p 이상"], ref: +(S.share30 - S.share30_prev).toFixed(1), sub: "세로선: 서울 전체 +" + (S.share30 - S.share30_prev).toFixed(1) + "%p" },
+  aptShare30: { label: "서른 살 넘은 아파트 비율 (재건축 연한)", unit: "%", breaks: [10, 20, 30, 40], ticks: ["10% 미만", "10–20%", "20–30%", "30–40%", "40% 이상"], ref: S.aptShare30, sub: "세로선: 서울 평균 " + S.aptShare30 + "%" },
+  aptNext: { label: "20대 아파트 비율 (10년 안에 서른 살)", unit: "%", breaks: [25, 35, 45, 50], ticks: ["25% 미만", "25–35%", "35–45%", "45–50%", "50% 이상"], ref: S.aptNext, sub: "세로선: 서울 평균 " + S.aptNext + "%" },
+  low20: { label: "스무 살 넘은 저층 주택 비율 (재개발 기준)", unit: "%", breaks: [50, 55, 60, 65], ticks: ["50% 미만", "50–55%", "55–60%", "60–65%", "65% 이상"], ref: 60, thr: true, sub: "굵은 선: 재개발 노후도 기준 60% · 서울 평균 " + S.low20 + "%" }
 };
 const KIND = { rebuild: "재건축 진행", redev: "재개발 · 신속통합기획 후보지", moa: "모아타운" };
 const RAMP = ["--r0", "--r1", "--r2", "--r3", "--r4"];
@@ -51,10 +51,10 @@ function facts() {
   const topApt = [...rows].sort((a, b) => b.aptShare30 - a.aptShare30)[0];
   const over60 = rows.filter(r => r.low20 >= 60).length;
   document.getElementById("facts").innerHTML = [
-    [S.share30 + "%", "서울 전체 주택 중 30년 이상 (" + fmt(S.old30) + "호)"],
-    [S.aptShare30 + "%", "아파트 중 30년 이상 · 최고 " + topApt.gu + " " + topApt.aptShare30 + "%"],
-    [S.low20 + "%", "저층 주택 중 20년 이상 (재개발 기준 60%)"],
-    [over60 + "개 구", "저층 주택 노후도가 구 평균으로 60% 이상"]
+    [S.share30 + "%", "서른 살 넘은 서울 집 (" + fmt(S.old30) + "호)"],
+    [S.aptShare30 + "%", "서른 살 넘은 아파트 · 가장 많은 곳 " + topApt.gu + " " + topApt.aptShare30 + "%"],
+    [S.low20 + "%", "스무 살 넘은 저층 주택 (재개발 기준 60%)"],
+    [over60 + "개 구", "저층 주택 노후도가 60%를 넘는 구"]
   ].map(([b, t]) => `<div class="fact"><b>${b}</b><span>${t}</span></div>`).join("");
 }
 
@@ -124,11 +124,11 @@ function focusGu(gu) {
   hi.setAttribute("d", GEO.gu[gu].d); hi.style.display = "";
   document.querySelectorAll(".row").forEach(x => x.classList.toggle("hl", x.dataset.gu === gu));
   tip.innerHTML = `<h4>${gu}</h4><dl>
-    <dt>전체 30년 이상</dt><dd>${r.share30}%</dd>
-    <dt>아파트 30년 이상</dt><dd>${r.aptShare30}% · ${fmt(r.apt30)}호</dd>
-    <dt>아파트 20~30년</dt><dd>${r.aptNext}%</dd>
-    <dt>저층 20년 이상</dt><dd>${r.low20}%</dd>
-    <dt>저층 30년 이상</dt><dd>${r.low30}% · ${fmt(r.lowOld30)}호</dd>
+    <dt>서른 살 넘은 집</dt><dd>${r.share30}%</dd>
+    <dt>서른 살 넘은 아파트</dt><dd>${r.aptShare30}% · ${fmt(r.apt30)}호</dd>
+    <dt>20대 아파트</dt><dd>${r.aptNext}%</dd>
+    <dt>스무 살 넘은 저층</dt><dd>${r.low20}%</dd>
+    <dt>서른 살 넘은 저층</dt><dd>${r.low30}% · ${fmt(r.lowOld30)}호</dd>
     <dt>${DATA.y0} → ${DATA.y1}</dt><dd>${r.share30_prev}% → ${r.share30}%</dd></dl>`;
   tip.hidden = false; placeTip(GEO.gu[gu].cx, GEO.gu[gu].cy);
 }

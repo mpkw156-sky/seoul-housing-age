@@ -2,11 +2,11 @@ const DATA = JSON.parse(document.getElementById("site-data").textContent);
 const GEO = JSON.parse(document.getElementById("geo-data").textContent);
 const S = DATA.seoul;
 const METRICS = {
-  share30: { label: "전체 주택 중 30년 이상 비율", unit: "%", full: 60, breaks: [20, 25, 30, 40], ticks: ["20%↓", "20–25", "25–30", "30–40", "40%↑"], ref: S.share30, refName: "서울 평균 " + S.share30 + "%" },
-  delta: { label: `30년 이상 비율, ${DATA.y0}→${DATA.y1} 증가폭`, unit: "%p", plus: true, full: 25, breaks: [5, 10, 15, 20], ticks: ["5%p↓", "5–10", "10–15", "15–20", "20%p↑"], ref: +(S.share30 - S.share30_prev).toFixed(1), refName: "서울 전체 +" + (S.share30 - S.share30_prev).toFixed(1) + "%p" },
-  aptShare30: { label: "아파트 중 30년 이상 비율 (지금 재건축 대상)", unit: "%", full: 65, breaks: [10, 20, 30, 40], ticks: ["10%↓", "10–20", "20–30", "30–40", "40%↑"], ref: S.aptShare30, refName: "서울 평균 " + S.aptShare30 + "%" },
-  aptNext: { label: "아파트 중 20~30년 비율 (10년 내 재건축 대상)", unit: "%", full: 60, breaks: [25, 35, 45, 50], ticks: ["25%↓", "25–35", "35–45", "45–50", "50%↑"], ref: S.aptNext, refName: "서울 평균 " + S.aptNext + "%" },
-  low20: { label: "저층 주택 중 20년 이상 비율 (재개발)", unit: "%", full: 90, breaks: [50, 55, 60, 65], ticks: ["50%↓", "50–55", "55–60", "60–65", "65%↑"], ref: 60, legal: true, refName: "재개발 노후도 기준 60%" }
+  share30: { label: "서른 살 넘은 집 비율", unit: "%", full: 60, breaks: [20, 25, 30, 40], ticks: ["20%↓", "20–25", "25–30", "30–40", "40%↑"], ref: S.share30, refName: "서울 평균 " + S.share30 + "%" },
+  delta: { label: `서른 살 넘은 집, ${DATA.y0}→${DATA.y1} 늘어난 폭`, unit: "%p", plus: true, full: 25, breaks: [5, 10, 15, 20], ticks: ["5%p↓", "5–10", "10–15", "15–20", "20%p↑"], ref: +(S.share30 - S.share30_prev).toFixed(1), refName: "서울 전체 +" + (S.share30 - S.share30_prev).toFixed(1) + "%p" },
+  aptShare30: { label: "서른 살 넘은 아파트 비율 (재건축 연한)", unit: "%", full: 65, breaks: [10, 20, 30, 40], ticks: ["10%↓", "10–20", "20–30", "30–40", "40%↑"], ref: S.aptShare30, refName: "서울 평균 " + S.aptShare30 + "%" },
+  aptNext: { label: "20대 아파트 비율 (10년 안에 서른 살)", unit: "%", full: 60, breaks: [25, 35, 45, 50], ticks: ["25%↓", "25–35", "35–45", "45–50", "50%↑"], ref: S.aptNext, refName: "서울 평균 " + S.aptNext + "%" },
+  low20: { label: "스무 살 넘은 저층 주택 비율 (재개발 기준)", unit: "%", full: 90, breaks: [50, 55, 60, 65], ticks: ["50%↓", "50–55", "55–60", "60–65", "65%↑"], ref: 60, legal: true, refName: "재개발 노후도 기준 60%" }
 };
 const KIND = { rebuild: "재건축 진행", redev: "재개발 · 신속통합기획 후보지", moa: "모아타운" };
 const RAMP = ["--r0", "--r1", "--r2", "--r3", "--r4"];
@@ -35,11 +35,11 @@ function readingText() {
   const over = rows.filter(r => r[metric] >= M.ref);
   const top = rows.slice(0, 3).map(r => `${r.gu} ${M.plus ? "+" : ""}${r[metric]}${M.unit}`).join(", ");
   const chip = '<span class="glass-chip" aria-hidden="true"></span>';
-  if (M.legal) return `${chip}판은 재개발 노후도 기준 60%입니다. 판 위로 솟은 <b>${over.length}개 구</b>는 단독·다세대 주택의 20년 이상 비율이 구 평균만으로도 기준을 넘습니다. 가장 높은 곳은 ${top}입니다.`;
-  if (metric === "aptShare30") return `${chip}판은 서울 평균 ${M.ref}%입니다. 판보다 높은 <b>${over.length}개 구</b>에 지금 재건축 연한을 넘긴 아파트가 몰려 있습니다. 노원은 기둥 하나가 다른 구보다 한참 높습니다 (${top}).`;
-  if (metric === "aptNext") return `${chip}판은 서울 평균 ${M.ref}%입니다. 판보다 높은 <b>${over.length}개 구</b>는 10년 안에 재건축 연한을 넘기는 아파트 비중이 큰 ‘다음 물결’ 지역입니다 (${top}).`;
-  if (metric === "delta") return `${chip}판은 서울 전체 증가폭 +${M.ref}%p입니다. 판 위의 <b>${over.length}개 구</b>는 5년 새 서울 평균보다 빨리 늙었습니다 (${top}).`;
-  return `${chip}판은 서울 평균 ${M.ref}%입니다. 판보다 높은 <b>${over.length}개 구</b>는 30년 넘은 주택 비율이 평균 이상입니다 (${top}).`;
+  if (M.legal) return `${chip}판은 재개발 노후도 기준 60%예요. 판 위로 솟은 <b>${over.length}개 구</b>는 단독·다세대 주택 중 스무 살 넘은 집이 구 평균만으로도 기준을 넘어요. 가장 높은 곳은 ${top}예요.`;
+  if (metric === "aptShare30") return `${chip}판은 서울 평균 ${M.ref}%예요. 판보다 높은 <b>${over.length}개 구</b>에 재건축 연한(서른 살)을 넘긴 아파트가 많아요 (${top}).`;
+  if (metric === "aptNext") return `${chip}판은 서울 평균 ${M.ref}%예요. 판보다 높은 <b>${over.length}개 구</b>는 10년 안에 서른 살이 되는 아파트가 많은 곳이에요 (${top}).`;
+  if (metric === "delta") return `${chip}판은 서울 전체 증가폭 +${M.ref}%p예요. 판 위의 <b>${over.length}개 구</b>는 5년 새 서울 평균보다 빨리 나이 들었어요 (${top}).`;
+  return `${chip}판은 서울 평균 ${M.ref}%예요. 판보다 높은 <b>${over.length}개 구</b>는 서른 살 넘은 집이 평균보다 많아요 (${top}).`;
 }
 
 function renderPanels() {
@@ -72,16 +72,16 @@ function renderInfo() {
     const sites = DATA.markers.filter(m => m.gu === selected).map(m => m.name);
     infoEl.innerHTML = `<button type="button" class="close" aria-label="닫기">×</button><div class="kind">${M.label} · ${rank}위 / 25</div>
       <h4>${selected}<span class="big">${M.plus ? "+" : ""}${r[metric]}${M.unit}</span></h4>
-      <dl><dt>전체 주택 30년+</dt><dd>${r.share30}%</dd>
-      <dt>아파트 30년+</dt><dd>${r.aptShare30}% · ${fmt(r.apt30)}호</dd>
-      <dt>아파트 20~30년</dt><dd>${r.aptNext}%</dd>
-      <dt>저층 주택 20년+</dt><dd>${r.low20}%</dd>
+      <dl><dt>서른 살 넘은 집</dt><dd>${r.share30}%</dd>
+      <dt>서른 살 넘은 아파트</dt><dd>${r.aptShare30}% · ${fmt(r.apt30)}호</dd>
+      <dt>20대 아파트</dt><dd>${r.aptNext}%</dd>
+      <dt>스무 살 넘은 저층</dt><dd>${r.low20}%</dd>
       <dt>${DATA.y0} → ${DATA.y1}</dt><dd>${r.share30_prev}% → ${r.share30}%</dd>
       ${sites.length ? `<dt>사업장</dt><dd style="font-family:var(--f-sans)">${sites.join(", ")}</dd>` : ""}</dl>`;
     return;
   }
   const top = sortedRows()[0];
-  infoEl.innerHTML = `<p class="hint"><b>구나 깃대를 눌러 보세요.</b><br>지금 가장 높은 기둥은 ${top.gu}(${M.plus ? "+" : ""}${top[metric]}${M.unit})입니다.</p>`;
+  infoEl.innerHTML = `<p class="hint"><b>구나 깃대를 눌러 보세요.</b><br>지금 가장 높은 기둥은 ${top.gu}(${M.plus ? "+" : ""}${top[metric]}${M.unit})예요.</p>`;
 }
 infoEl.addEventListener("click", e => { if (e.target.closest(".close")) select(null); });
 
@@ -94,7 +94,7 @@ try {
   renderer = new THREE.WebGLRenderer({ antialias: true });
   ok = true;
 } catch (e) {
-  stage.insertAdjacentHTML("beforeend", `<div class="nogl"><p>이 브라우저에서는 3D 화면을 그릴 수 없습니다.<br>아래 순위와 <a href="/">평면 지도</a>로 같은 내용을 볼 수 있습니다.</p></div>`);
+  stage.insertAdjacentHTML("beforeend", `<div class="nogl"><p>이 브라우저에서는 3D 화면을 그릴 수 없어요.<br>아래 순위와 <a href="/">평면 지도</a>로 같은 내용을 볼 수 있어요.</p></div>`);
 }
 
 function buildScene() {

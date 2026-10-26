@@ -2,6 +2,10 @@
 
 서울 25개 자치구의 주택·아파트가 얼마나 오래됐는지 보여주는 정적 웹사이트입니다. 공공 통계만 쓰고, 매년 자동으로 갱신합니다. 투자 권유나 자문이 아닙니다.
 
+## 컨셉
+
+'우리 동네 집 나이' — 집을 사람처럼 나이로 소개합니다. 마스코트는 안경 쓴 작은 집 **연식이**(직접 만든 캐릭터, `scripts/build.py`의 `mascot()`), 말투는 해요체, 제목 글꼴은 배민 주아체(OFL)입니다. 개인정보처리방침만 정확성을 위해 기존 문체를 유지합니다.
+
 ## 페이지
 
 | 경로 | 내용 |
@@ -69,7 +73,7 @@ cd dist && python -m http.server 8000   # http://localhost:8000
 
 ### 공유 이미지 다시 만들기
 
-`src/assets/og.png`는 한 번 만들어 둔 이미지입니다. 수치를 새로 반영하려면 `pip install playwright && playwright install chromium` 후 `python scripts/make_og.py`를 실행합니다.
+`src/assets/og.png`는 한 번 만들어 둔 이미지입니다. 수치를 새로 반영하려면 `pip install playwright && playwright install chromium` 후 `python scripts/make_og.py`를 실행합니다. 인터넷이 막힌 곳에서는 `OG_FONT_CSS`에 글꼴 CSS 파일 경로를 넣습니다.
 
 ## 출처와 라이선스
 
@@ -77,4 +81,4 @@ cd dist && python -m http.server 8000   # http://localhost:8000
 - 보도자료 모음: 서울특별시·국토교통부 보도자료의 제목과 원문 링크 (저작권은 각 기관)
 - 자치구 경계: 통계청 센서스용 행정구역경계(2013), [southkorea/seoul-maps](https://github.com/southkorea/seoul-maps) 가공본
 - three.js: MIT License (`src/assets/vendor/three.LICENSE.txt`)
-- 글꼴: IBM Plex Sans KR / IBM Plex Mono (SIL Open Font License, Google Fonts)
+- 글꼴: 배민 주아체(BM JUA), IBM Plex Sans KR / IBM Plex Mono (SIL Open Font License, Google Fonts)
