@@ -46,7 +46,10 @@ LOGO = ('<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="13" width="5
 
 esc = html.escape
 
-# 마스코트: 안경 쓴 작은 집 (이 사이트용 창작 캐릭터)
+# 마스코트 '연식이': 안경 쓴 작은 집 (이 사이트용 창작 캐릭터, 2026-10 KIPRIS 동일·유사 상표 없음 확인)
+MASCOT_NAME = "연식이"
+
+
 def mascot(size: int = 96, cls: str = "mascot") -> str:
     return (f'<svg class="{cls}" width="{size}" height="{size}" viewBox="0 0 120 120" aria-hidden="true">'
             '<path d="M14 58 L60 18 L106 58" fill="none" stroke="var(--m-line)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path>'
@@ -258,8 +261,8 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <meta property="og:image" content="{BASE}/assets/og.png">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1d1f1e" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fffcf7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#231d19" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -447,7 +450,7 @@ def build_home():
     links = "\n".join(f'<a href="{gu_link(r["gu"])}">{esc(r["gu"])}<span>{r["share30"]}%</span></a>'
                       for r in sorted(ROWS, key=lambda r: -r["share30"]))
     body = tpl("home.html", Y1=Y1, NOTES=home_notes(), GU_LINKS=links, AD_SLOT=ad("home"),
-               PROJECTS_ASOF=ym_label(PROJ["asOf"]), NEWS=home_news(), MASCOT=mascot(112),
+               PROJECTS_ASOF=ym_label(PROJ["asOf"]), NEWS=home_news(), MASCOT=mascot(112), MASCOT_NAME=MASCOT_NAME,
                TENS=tens(SEOUL["share30"]), HOUSES=houses(tens(SEOUL["share30"]), f"서울 집 10채 중 {tens(SEOUL['share30'])}채가 서른 살 이상"),
                APT_TENS=tens(SEOUL["aptShare30"]))
     jsonld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE, "url": BASE + "/",
@@ -508,7 +511,7 @@ def build_gu_pages():
         if projs:
             proj_html = (f'<section class="projects" aria-label="정비사업 진행 현황"><h2>정비사업이 진행 중인 동네</h2>'
                          + "".join(project_card(p, show_gu=False) for p in projs)
-                         + f'<p class="crumbs">전체 목록은 <a href="/projects/">정비사업 현황</a>에 있습니다.</p></section>')
+                         + f'<p class="crumbs">전체 목록은 <a href="/projects/">정비사업 현황</a>에 있어요.</p></section>')
         rows_html = ""
         for y in reversed(YEARS):
             mm = metrics_from(rec(y, i))
@@ -530,6 +533,7 @@ def build_gu_pages():
 <section class="hello" aria-label="한눈에 보기">
   {mascot(96)}
   <div class="bubble">
+    <span class="who">{MASCOT_NAME}가 알려 드려요</span>
     <p class="say">{esc(g)} 집 10채 중 <b>{n10}채</b>는 서른 살이 넘었어요.</p>
     {houses(n10, f"{g} 집 10채 중 {n10}채가 서른 살 이상")}
     <p class="small">{esc(paras[0])}</p>
@@ -577,12 +581,12 @@ def build_gu_index():
              f'<td>{s["aptNext"]}%</td><td>{s["low20"]}%</td><td>{s["delta"]:+.1f}%p</td></tr>')
     body = f"""
 <header class="page-head">
-  <div class="eyebrow">{Y1}년 기준 · 30년 이상 주택 비율 순</div>
-  <h1>자치구별 주택 노후도</h1>
-  <p class="lede">25개 자치구의 노후 주택 비율을 한 표로 봅니다. 구 이름을 누르면 연도별 추이와 지은 연도별 주택 수가 있는 상세 페이지로 갑니다.</p>
+  <div class="eyebrow">자치구별 주택 노후도 · {Y1}년 기준 · 서른 살 넘은 집이 많은 순</div>
+  <h1>25개 구 집 나이 한눈에 보기</h1>
+  <p class="lede">25개 자치구의 집 나이를 한 표에 모았어요. 구 이름을 누르면 해마다 어떻게 바뀌었는지, 언제 지은 집이 많은지 볼 수 있어요.</p>
 </header>
 <section class="card"><div class="tablewrap"><table class="data">
-<thead><tr><th>자치구</th><th>전체 주택(호)</th><th>30년 이상</th><th>아파트 30년+</th><th>아파트 20~30년</th><th>저층 20년+</th><th>{Y0}→{Y1}</th></tr></thead>
+<thead><tr><th>자치구</th><th>전체 주택(호)</th><th>30살+ 집</th><th>30살+ 아파트</th><th>20대 아파트</th><th>20살+ 저층</th><th>5년 새 변화</th></tr></thead>
 <tbody>{rows}</tbody></table></div></section>
 """
     layout("gu/", f"자치구별 주택 노후도 순위 {Y1} – 서울 25개 구", f"서울 25개 자치구의 30년 이상 주택 비율, 아파트·저층 주택 노후도, 5년간 변화를 한 표로 비교합니다 ({Y1}년 기준).",
@@ -597,9 +601,9 @@ def build_projects():
             groups += f'<section class="projects"><h2>{KIND[t]} · {len(items)}곳</h2>' + "".join(project_card(p) for p in items) + "</section>"
     body = f"""
 <header class="page-head">
-  <div class="eyebrow">{ym_label(PROJ['asOf'])} 기준 · {len(PROJ['items'])}곳</div>
-  <h1>정비사업 진행 현황</h1>
-  <p class="lede">{esc(PROJ['note'])} 지도에는 같은 동네를 기호로 표시했습니다.</p>
+  <div class="eyebrow">정비사업 진행 현황 · {ym_label(PROJ['asOf'])} 기준 · {len(PROJ['items'])}곳</div>
+  <h1>새집으로 바뀌는 중인 동네</h1>
+  <p class="lede">재건축·재개발·모아타운이 진행 중인 동네를 모았어요. 언론 보도와 서울시 발표를 바탕으로 정리했고, 위치는 동 단위 대략값이에요. 기준월 이후에 단계가 바뀌었을 수 있으니 항목마다 붙은 출처를 확인해 주세요. 지도에도 같은 동네를 기호로 표시했어요.</p>
 </header>
 {groups}
 """
@@ -631,9 +635,9 @@ def home_news() -> str:
     items = NEWS["items"][:3]
     if not items:
         return ""
-    return (f'<section class="news-home" aria-label="최근 보도자료"><div class="news-home-head"><h2 class="sec">서울 주택·부동산 최근 보도자료</h2>'
+    return (f'<section class="news-home" aria-label="최근 보도자료"><div class="news-home-head"><h2 class="sec">오늘의 서울 집 소식</h2>'
             f'<a href="/news/">전체 보기 →</a></div><ul class="news-list">{"".join(news_item(i) for i in items)}</ul>'
-            f'<p class="news-note">서울시·국토교통부가 발표한 보도자료의 제목과 원문 링크입니다.</p></section>')
+            f'<p class="news-note">서울시·국토교통부가 발표한 보도자료의 제목과 원문 링크예요.</p></section>')
 
 
 def build_news():
@@ -645,25 +649,25 @@ def build_news():
         groups = "".join(f'<section class="news-day"><h2 class="sec">{day_label(k)}</h2><ul class="news-list">'
                          + "".join(news_item(i) for i in days[k]) + "</ul></section>" for k in keys)
     else:
-        groups = '<p class="lede">아직 모은 보도자료가 없습니다. 매일 저녁 자동으로 채워집니다.</p>'
+        groups = f'<section class="hello">{mascot(80)}<div class="bubble"><p class="say">아직 모은 소식이 없어요.</p><p class="small">매일 낮 12시, 저녁 7시쯤 새 보도자료를 찾아 채워요.</p></div></section>'
     upd = NEWS.get("updated", "")
     upd_txt = f"{upd[:10].replace('-', '.')} {upd[11:16]} 갱신" if upd else "매일 갱신"
     srcs = "".join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>' for t, u in NEWS_SOURCES)
     body = f"""
 <header class="page-head">
-  <div class="eyebrow">{upd_txt} · 하루 최대 3건</div>
-  <h1>서울 주택·부동산 보도자료</h1>
-  <p class="lede">서울특별시와 국토교통부가 낸 보도자료 가운데 서울의 주택·정비사업·부동산과 관련된 것을 매일 골라 제목과 원문 링크로 모았습니다. 내용은 제목을 눌러 각 기관 누리집에서 확인해 주세요.</p>
+  <div class="eyebrow">서울 주택·부동산 보도자료 · {upd_txt} · 하루 최대 3건</div>
+  <h1>오늘의 서울 집 소식</h1>
+  <p class="lede">서울특별시와 국토교통부가 낸 보도자료 가운데 서울의 주택·정비사업·부동산 소식을 매일 골라 제목과 원문 링크로 모았어요. 내용은 제목을 눌러 각 기관 누리집에서 확인해 주세요.</p>
 </header>
 <div class="news-days">{groups}</div>
 <div class="prose news-about">
   <h2>모으는 기준</h2>
   <ul>
-    <li>출처: {srcs.replace('<li>', '').replace('</li>', ', ').rstrip(', ')}. 언론사 기사는 싣지 않습니다.</li>
-    <li>제목에 재건축·재개발·정비사업·모아타운·신속통합기획·주택공급·전세·실거래 같은 말이 들어간 보도자료를 자동으로 고르고, 하루 최대 3건까지 싣습니다. 발표가 적은 날이나 주말에는 1건 이하일 수 있습니다.</li>
-    <li>제목, 발표 기관·부서, 날짜, 원문 링크만 표시합니다. 본문·요약·사진·첨부파일은 옮기지 않으며, 제목 앞의 "(석간)", "(엠바고…)" 같은 배포 표시는 뺍니다.</li>
-    <li>고르는 방식이 자동이라 관련이 적은 자료가 섞이거나 중요한 자료가 빠질 수 있습니다. 최근 180일치만 보관합니다.</li>
-    <li>이 목록은 정보 제공용이며 투자 권유나 자문이 아닙니다. 정책 내용은 반드시 원문으로 확인해 주세요.</li>
+    <li>출처: {srcs.replace('<li>', '').replace('</li>', ', ').rstrip(', ')}. 언론사 기사는 싣지 않아요.</li>
+    <li>제목에 재건축·재개발·정비사업·모아타운·신속통합기획·주택공급·전세·실거래 같은 말이 들어간 보도자료를 자동으로 고르고, 하루 최대 3건까지 실어요. 발표가 적은 날이나 주말에는 1건 이하일 수 있어요.</li>
+    <li>제목, 발표 기관·부서, 날짜, 원문 링크만 보여 줘요. 본문·요약·사진·첨부파일은 옮기지 않고, 제목 앞의 "(석간)", "(엠바고…)" 같은 배포 표시는 빼요.</li>
+    <li>고르는 방식이 자동이라 관련이 적은 자료가 섞이거나 중요한 자료가 빠질 수 있어요. 최근 180일치만 보관해요.</li>
+    <li>이 목록은 정보 제공용이며 투자 권유나 자문이 아니에요. 정책 내용은 꼭 원문으로 확인해 주세요.</li>
   </ul>
 </div>
 """
@@ -675,40 +679,41 @@ def build_news():
 def build_methodology():
     body = f"""
 <header class="page-head">
-  <div class="eyebrow">데이터와 계산 방법</div>
-  <h1>방법론</h1>
-  <p class="lede">이 사이트의 모든 수치가 어디서 왔고 어떻게 계산했는지 설명합니다.</p>
+  <div class="eyebrow">방법론 · 데이터와 계산 방법</div>
+  <h1>집 나이는 이렇게 셌어요</h1>
+  <p class="lede">이 사이트의 모든 숫자가 어디서 왔고 어떻게 계산했는지 설명해요. 사이트에서 말하는 '서른 살'은 준공 30년, '스무 살'은 준공 20년을 뜻해요.</p>
 </header>
 <div class="prose">
   <h2>원자료</h2>
-  <p>국가데이터처 주택총조사를 서울특별시가 서울 데이터 허브에 공개한 두 통계를 씁니다. 둘 다 공공누리 제1유형(출처 표시 시 상업적 이용·변경 가능)입니다.</p>
+  <p>국가데이터처 주택총조사를 서울특별시가 서울 데이터 허브에 공개한 두 통계를 써요. 둘 다 공공누리 제1유형(출처를 밝히면 상업적 이용·변경 가능)이에요.</p>
   <ul>
     <li>「서울시 노후기간별 주택현황 통계」: 자치구·주택종류별로 지은 지 20~30년 미만, 30년 이상 된 주택 수</li>
     <li>「서울시 건축연도별 주택현황 통계」: 자치구·주택종류·건축연도별 주택 수. 전체 주택 수와 지은 연도 분포에 씁니다.</li>
   </ul>
-  <p>현재 반영된 기간은 {YEARS[0]}~{Y1}년입니다. 개인정보 보호를 위해 5호 미만이라 비공개(x) 처리된 칸은 0으로 계산했습니다.</p>
+  <p>지금 반영된 기간은 {YEARS[0]}~{Y1}년이에요. 개인정보 보호를 위해 5호 미만이라 비공개(x)로 처리된 칸은 0으로 계산했어요.</p>
   <h2>지표 정의</h2>
   <ul>
-    <li><b>30년 이상 주택 비율</b> = 30년 이상 된 주택 ÷ 전체 주택</li>
-    <li><b>아파트 30년 이상</b> = 30년 이상 된 아파트 ÷ 전체 아파트. 재건축 연한(준공 30년)을 넘긴 아파트의 비율입니다.</li>
-    <li><b>아파트 20~30년</b> = 20~30년 된 아파트 ÷ 전체 아파트. 10년 안에 30년을 넘기게 될 아파트입니다.</li>
-    <li><b>저층 주택 20년 이상</b> = 20년 이상 된 단독·다세대·연립·비주거용 건물 내 주택 ÷ 전체 저층 주택</li>
-    <li><b>5년간 증가폭</b> = {Y1}년 30년 이상 비율 − {Y0}년 30년 이상 비율 (%p)</li>
+    <li><b>서른 살 넘은 집 (30년 이상 주택 비율)</b> = 30년 이상 된 주택 ÷ 전체 주택</li>
+    <li><b>서른 살 넘은 아파트</b> = 30년 이상 된 아파트 ÷ 전체 아파트. 재건축 연한(준공 30년)을 넘긴 아파트의 비율이에요.</li>
+    <li><b>20대 아파트</b> = 20~30년 된 아파트 ÷ 전체 아파트. 10년 안에 서른 살이 되는 아파트예요.</li>
+    <li><b>스무 살 넘은 저층 주택</b> = 20년 이상 된 단독·다세대·연립·비주거용 건물 내 주택 ÷ 전체 저층 주택</li>
+    <li><b>5년 새 늘어난 폭</b> = {Y1}년 서른 살 넘은 집 비율 − {Y0}년 비율 (%p)</li>
+    <li><b>'10채 중 몇 채'</b> = 위 비율을 10으로 나눠 반올림한 값이에요. 쉽게 읽으라고 붙인 표현이라 정확한 값은 % 숫자를 봐 주세요.</li>
   </ul>
   <h2>법정 노후도와 다른 점</h2>
-  <p>재개발 정비구역 지정에 쓰는 법정 노후도는 건축물 <b>동수</b> 기준이고, 구조에 따라 노후 판정 연수(20~30년)가 다릅니다. 이 사이트의 비율은 주택 <b>호수</b> 기준이라, 다세대 한 동에 여러 호가 있는 경우 등에서 차이가 납니다. 또 실제 구역 지정은 블록 단위의 노후도, 접도율, 과소필지, 주민 동의율로 판단하므로, 구 평균은 경향을 보는 참고값입니다.</p>
+  <p>재개발 정비구역 지정에 쓰는 법정 노후도는 건축물 <b>동수</b> 기준이고, 구조에 따라 노후 판정 연수(20~30년)가 달라요. 이 사이트의 비율은 주택 <b>호수</b> 기준이라, 다세대 한 동에 여러 호가 있는 경우 등에서 차이가 나요. 또 실제 구역 지정은 블록 단위의 노후도, 접도율, 과소필지, 주민 동의율로 판단하니까, 구 평균은 흐름을 보는 참고값으로 봐 주세요.</p>
   <h2>재건축·재개발 기준</h2>
   <ul>
-    <li>재건축: 준공 30년이 넘은 아파트는 안전진단 없이 재건축을 시작할 수 있고, 재건축진단은 사업시행인가 전까지 통과하면 됩니다 (2025년 6월 시행 도시정비법 개정).</li>
-    <li>재개발: 노후·불량 건축물 60% 이상, 구역 면적 1만㎡ 이상에 과소필지·접도율·호수밀도·노후 연면적 요건 중 하나를 충족해야 합니다.</li>
-    <li>모아타운: 2만~10만㎡ 규모에서 노후도 50% 이상이면 추진할 수 있습니다.</li>
+    <li>재건축: 준공 30년이 넘은 아파트는 안전진단 없이 재건축을 시작할 수 있고, 재건축진단은 사업시행인가 전까지 통과하면 돼요 (2025년 6월 시행 도시정비법 개정).</li>
+    <li>재개발: 노후·불량 건축물 60% 이상, 구역 면적 1만㎡ 이상에 과소필지·접도율·호수밀도·노후 연면적 요건 중 하나를 갖춰야 해요.</li>
+    <li>모아타운: 2만~10만㎡ 규모에서 노후도 50% 이상이면 추진할 수 있어요.</li>
   </ul>
   <h2>정비사업 현황</h2>
-  <p>언론 보도와 서울시 발표를 바탕으로 정리했고, 항목마다 기준월과 출처를 밝혔습니다. 지도 위치는 동 단위 대략값입니다. 공식 단계 확인은 서울시 정비사업 정보몽땅에서 할 수 있습니다.</p>
+  <p>언론 보도와 서울시 발표를 바탕으로 정리했고, 항목마다 기준월과 출처를 밝혔어요. 지도 위치는 동 단위 대략값이에요. 공식 단계는 서울시 정비사업 정보몽땅에서 확인할 수 있어요.</p>
   <h2>갱신 주기</h2>
-  <p>원자료는 매년 4월 무렵 새 연도가 공개됩니다. 이 사이트는 매년 5월 1일 자동으로 새 자료를 받아 다시 계산하고, 검증을 통과하면 운영자 확인을 거쳐 반영합니다. 계산 코드와 데이터는 모두 <a href="https://github.com/mpkw156-sky/seoul-housing-age" rel="noopener">GitHub 저장소</a>에 공개돼 있습니다.</p>
+  <p>원자료는 매년 4월 무렵 새 연도가 공개돼요. 이 사이트는 매년 5월 1일 자동으로 새 자료를 받아 다시 계산하고, 검증을 통과하면 운영자 확인을 거쳐 반영해요. 계산 코드와 데이터는 모두 <a href="https://github.com/mpkw156-sky/seoul-housing-age" rel="noopener">GitHub 저장소</a>에 공개돼 있어요.</p>
   <h2>경계 데이터</h2>
-  <p>자치구 경계는 통계청 센서스용 행정구역경계(2013)를 간략화한 공개 데이터(southkorea/seoul-maps)를 씁니다. 표시용으로 단순화되어 실제 경계와 조금 다를 수 있습니다.</p>
+  <p>자치구 경계는 통계청 센서스용 행정구역경계(2013)를 간략화한 공개 데이터(southkorea/seoul-maps)를 써요. 표시용으로 단순화해서 실제 경계와 조금 다를 수 있어요.</p>
 </div>
 """
     layout("methodology/", f"방법론 – {SITE}", "주택 노후도 지표의 원자료, 정의, 계산식, 법정 노후도와의 차이, 갱신 주기를 설명합니다.",
@@ -732,9 +737,9 @@ def build_data_page():
         for k, t, d, u in sources)
     body = f"""
 <header class="page-head">
-  <div class="eyebrow">{YEARS[0]}~{Y1}년 · 매년 갱신</div>
-  <h1>데이터 출처</h1>
-  <p class="lede">이 사이트의 모든 수치는 아래 공공 통계를 가공한 것입니다. 원자료는 각 기관 사이트에서 직접 확인할 수 있습니다.</p>
+  <div class="eyebrow">데이터 출처 · {YEARS[0]}~{Y1}년 · 해마다 갱신</div>
+  <h1>숫자는 여기서 왔어요</h1>
+  <p class="lede">이 사이트의 모든 숫자는 아래 공공 통계를 가공한 거예요. 원자료는 각 기관 사이트에서 직접 확인할 수 있어요.</p>
 </header>
 <section class="sources" aria-label="주택 통계 출처">{cards}</section>
 <div class="prose">
@@ -745,7 +750,7 @@ def build_data_page():
     <li>보도자료 모음: <a href="https://www.seoul.go.kr/news/news_report.do" rel="noopener" target="_blank">서울특별시 보도자료</a>, <a href="https://www.molit.go.kr/USR/NEWS/m_71/lst.jsp" rel="noopener" target="_blank">국토교통부 보도자료</a>의 제목과 원문 링크 (<a href="/news/">보도자료 모음</a>, 매일 갱신)</li>
   </ul>
   <h2>갱신 주기</h2>
-  <p>원자료는 매년 4월 무렵 새 연도가 공개되며, 이 사이트는 매년 5월에 반영합니다. 지표 정의와 계산 방법은 <a href="/methodology/">방법론</a>에 있습니다.</p>
+  <p>원자료는 매년 4월 무렵 새 연도가 공개되고, 이 사이트는 매년 5월에 반영해요. 지표 정의와 계산 방법은 <a href="/methodology/">방법론</a>에 있어요.</p>
 </div>
 """
     layout("data/", f"데이터 출처 – {SITE}",
@@ -759,23 +764,32 @@ def build_about():
 <header class="page-head">
   <div class="eyebrow">사이트 소개</div>
   <h1>{esc(SITE)} 소개</h1>
-  <p class="lede">{esc(SITE)}는 공공 통계로 서울의 주택이 얼마나 오래됐는지 보여주는 시각화 사이트입니다. 자치구별로 아파트와 단독·다세대 주택의 나이를 나눠 보고, 매년 새 통계로 갱신합니다.</p>
+  <p class="lede">{esc(SITE)}는 공공 통계로 서울의 집이 몇 살인지 보여주는 시각화 사이트예요. 자치구별로 아파트와 단독·다세대 주택의 나이를 나눠 보고, 해마다 새 통계로 고쳐요.</p>
 </header>
+<section class="hello" aria-label="마스코트 소개">
+  {mascot(104)}
+  <div class="bubble">
+    <span class="who">마스코트 소개</span>
+    <p class="say">안녕하세요, {MASCOT_NAME}예요.</p>
+    <p class="small">차나 건물이 몇 년 됐는지를 '연식'이라고 하죠. 저는 서울 집들의 연식을 세어 알려 드리는 안경 쓴 작은 집이에요. 숫자는 모두 공공 통계에서 가져오고, 어느 동네가 좋다 나쁘다는 말은 하지 않아요.</p>
+  </div>
+</section>
 <div class="prose">
   <h2>운영 원칙</h2>
   <ul>
-    <li>공개된 공식 통계만 쓰고, 모든 수치에 출처와 기준연도를 밝힙니다.</li>
-    <li>특정 지역이나 단지의 매수·매도를 권하지 않습니다. 이 사이트는 투자 권유나 자문이 아닙니다.</li>
-    <li>계산 방법과 코드를 공개해 누구나 같은 결과를 다시 만들 수 있게 합니다.</li>
+    <li>공개된 공식 통계만 쓰고, 모든 숫자에 출처와 기준연도를 밝혀요.</li>
+    <li>특정 지역이나 단지의 매수·매도를 권하지 않아요. 이 사이트는 투자 권유나 자문이 아니에요.</li>
+    <li>계산 방법과 코드를 공개해서 누구나 같은 결과를 다시 만들 수 있게 해요.</li>
   </ul>
   <h2>출처와 라이선스</h2>
   <ul>
     <li>주택 통계: 국가데이터처 주택총조사 – 서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」 (공공누리 제1유형) · <a href="https://data.seoul.go.kr/" rel="noopener">data.seoul.go.kr</a></li>
     <li>자치구 경계: 통계청 센서스용 행정구역경계(2013), <a href="https://github.com/southkorea/seoul-maps" rel="noopener">southkorea/seoul-maps</a> 가공본</li>
     <li>정비사업 현황: 각 항목에 표시한 언론 보도와 서울시 발표 (<a href="/projects/">정비사업 현황</a>)</li>
-    <li>보도자료 모음: 서울특별시·국토교통부 보도자료의 제목과 원문 링크만 표시합니다. 저작권은 각 기관에 있습니다 (<a href="/news/">보도자료 모음</a>)</li>
+    <li>보도자료 모음: 서울특별시·국토교통부 보도자료의 제목과 원문 링크만 보여 줘요. 저작권은 각 기관에 있어요 (<a href="/news/">보도자료 모음</a>)</li>
+    <li>마스코트 '{MASCOT_NAME}': 이 사이트가 직접 만든 캐릭터</li>
     <li>3D 그래픽: three.js (MIT License)</li>
-    <li>글꼴: IBM Plex Sans KR, IBM Plex Mono (SIL Open Font License, Google Fonts)</li>
+    <li>글꼴: 배민 주아체(BM JUA), IBM Plex Sans KR, IBM Plex Mono (SIL Open Font License, Google Fonts)</li>
   </ul>
   <h2>문의</h2>
   <p>{contact}</p>
@@ -828,12 +842,18 @@ def build_privacy():
 
 
 def build_404():
-    body = """
+    body = f"""
 <header class="page-head">
   <div class="eyebrow">404</div>
-  <h1>페이지를 찾을 수 없습니다</h1>
-  <p class="lede">주소가 바뀌었거나 없는 페이지입니다. <a href="/">지도</a>나 <a href="/gu/">자치구 목록</a>에서 다시 찾아 주세요.</p>
+  <h1>앗, 길을 잃었어요</h1>
 </header>
+<section class="hello" aria-label="안내">
+  {mascot(96)}
+  <div class="bubble">
+    <p class="say">이 주소에는 집이 없어요.</p>
+    <p class="small">주소가 바뀌었거나 없는 페이지예요. <a href="/">지도</a>나 <a href="/gu/">자치구 목록</a>에서 다시 찾아 주세요.</p>
+  </div>
+</section>
 """
     layout("404.html", f"페이지를 찾을 수 없습니다 – {SITE}", "요청한 페이지가 없습니다.", body, noindex=True)
 
