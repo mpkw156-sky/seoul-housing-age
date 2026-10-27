@@ -11,8 +11,13 @@ import html
 import json
 import math
 import re
+import os
 import shutil
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from yeonsik import buddy  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -26,6 +31,10 @@ GEOJSON = json.loads((DATA / "seoul_gu.geojson").read_text(encoding="utf-8"))
 PROJ = json.loads((DATA / "projects.json").read_text(encoding="utf-8"))
 NEWS_FILE = DATA / "news.json"
 NEWS = json.loads(NEWS_FILE.read_text(encoding="utf-8")) if NEWS_FILE.exists() else {"updated": "", "items": []}
+# 직접 쓴 게시글: 인터넷신문 등록 전에는 공개하지 않습니다 (config.json posts_public). PREVIEW_POSTS=1 은 로컬 미리보기용.
+POSTS_PUBLIC = bool(CFG.get("posts_public")) or os.environ.get("PREVIEW_POSTS") == "1"
+POSTS = sorted((json.loads(f.read_text(encoding="utf-8")) for f in (DATA / "posts").glob("*.json")),
+               key=lambda x: (x["date"], x["id"]), reverse=True) if (DATA / "posts").exists() else []
 
 BASE = CFG["base_url"].rstrip("/")
 SITE = CFG["site_name"]
@@ -211,7 +220,7 @@ def ad(slot: str) -> str:
     return ""
 
 
-NAV = [("/", "지도"), ("/3d/", "3D"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "뉴스"), ("/methodology/", "방법론"), ("/data/", "데이터")]
+NAV = [("/", "홈"), ("/map/", "지도"), ("/3d/", "3D"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/methodology/", "방법론"), ("/data/", "데이터")]
 
 
 def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css=(), js=(), data=None, geo=None,
@@ -241,7 +250,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
         datas += f'<script id="site-data" type="application/json">{jdump(data)}</script>'
     if geo is not None:
         datas += f'<script id="geo-data" type="application/json">{jdump(geo)}</script>'
-    scripts = "".join(f'<script src="/assets/{s}?v={VER}"></script>' for s in js)
+    scripts = "".join(f'<script src="/assets/{s}?v={VER}"></script>' for s in js) + f'<script src="/assets/yeonsik.js?v={VER}" defer></script>'
     contact = (f' · 문의 <a href="mailto:{esc(CFG["contact_email"])}">{esc(CFG["contact_email"])}</a>'
                if CFG.get("contact_email") else "")
     doc = f"""<!doctype html>
@@ -284,7 +293,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <footer class="site-foot gutter"><div class="inner">
 <p>자료: 국가데이터처 주택총조사 (서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」, 공공누리 제1유형), {Y1}년 기준. 정비사업 현황은 언론 보도·서울시 발표 기준({ym_label(PROJ['asOf'])})입니다.</p>
 <p>이 사이트는 공공 통계로 집 나이를 보여주는 정보 서비스예요. 투자 권유나 자문이 아니에요. 노후도는 주택 호수로 계산한 근사치라 법정 노후도와 다를 수 있어요.</p>
-<div class="links"><a href="/news/">보도자료 모음</a><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
+<div class="links"><a href="/news/">집 소식</a><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
 <p>© {TODAY.year} {esc(CFG.get('operator', SITE))}{contact} · 마지막 빌드 {TODAY.isoformat()}</p>
 </div></footer>
 {datas}
@@ -424,6 +433,14 @@ def map_payload() -> dict:
             "markers": MARKERS}
 
 
+def common_lines() -> list[str]:
+    a1 = max(ROWS, key=lambda r: r["aptShare30"]); d1 = max(ROWS, key=lambda r: r["delta"])
+    return [f"서울 집 10채 중 {tens(SEOUL['share30'])}채는 서른 살이 넘었어요.",
+            f"아파트가 가장 나이 든 동네는 {a1['gu']}예요. 서른 살 넘은 아파트가 {a1['aptShare30']}%나 돼요.",
+            f"5년 새 가장 빨리 나이 든 곳은 {d1['gu']}예요. {d1['delta']:+.1f}%p 늘었어요.",
+            f"저는 {MASCOT_NAME}예요. 서울 집들의 연식을 세는 게 일이에요."]
+
+
 def home_notes() -> str:
     by_apt = sorted(ROWS, key=lambda r: -r["aptShare30"])
     by_low = sorted(ROWS, key=lambda r: -r["low20"])
@@ -447,22 +464,61 @@ def home_notes() -> str:
 
 
 def build_home():
-    links = "\n".join(f'<a href="{gu_link(r["gu"])}">{esc(r["gu"])}<span>{r["share30"]}%</span></a>'
-                      for r in sorted(ROWS, key=lambda r: -r["share30"]))
-    body = tpl("home.html", Y1=Y1, NOTES=home_notes(), GU_LINKS=links, AD_SLOT=ad("home"),
-               PROJECTS_ASOF=ym_label(PROJ["asOf"]), NEWS=home_news(), MASCOT=mascot(112), MASCOT_NAME=MASCOT_NAME,
-               TENS=tens(SEOUL["share30"]), HOUSES=houses(tens(SEOUL["share30"]), f"서울 집 10채 중 {tens(SEOUL['share30'])}채가 서른 살 이상"),
-               APT_TENS=tens(SEOUL["aptShare30"]))
+    n10 = tens(SEOUL["share30"])
+    opts = "".join(f'<option value="{gu_link(g)}">{esc(g)}</option>' for g in GU)
+    tiles = [("/map/", "지도", "25개 구 집 나이를 색으로"), ("/3d/", "3D", "집 나이를 기둥으로 쌓아 보기"),
+             ("/gu/", "자치구", "우리 구 집 나이 자세히"), ("/projects/", "정비사업", "새집으로 바뀌는 중인 동네")]
+    tile_html = "".join(f'<a class="tile" href="{h}"><b>{t}</b><span>{d}</span></a>' for h, t, d in tiles)
+    body = f"""
+<section class="home-hero" aria-labelledby="hero-h">
+  <div>
+    <div class="eyebrow">서울 주택 노후도 · {Y1}년 기준 · 25개 자치구</div>
+    <h1 id="hero-h">서울 주택이<br>늙어가고 있어요<span class="wave">~</span></h1>
+    <p class="lede">서울 집 10채 중 {n10}채는 벌써 서른 살(준공 30년)을 넘겼어요. 5년 전인 {Y0}년보다 {SEOUL['delta']:.1f}%p 늘었죠. 우리 동네 집은 몇 살인지 {MASCOT_NAME}와 함께 알아봐요.</p>
+    <div class="hero-cta">
+      <a class="btn" href="/map/">지도에서 보기</a>
+      <span class="gu-pick"><label class="sr-only" for="gu-select">우리 구 바로 가기</label>
+        <select id="gu-select"><option value="">우리 구 바로 가기</option>{opts}</select></span>
+      <noscript><a class="btn ghost" href="/gu/">자치구 목록</a></noscript>
+    </div>
+  </div>
+  <div class="hero-side">
+    {buddy("hello", lines=common_lines(), size="")}
+    <div class="bubble">
+      <span class="who">{MASCOT_NAME}가 알려 드려요</span>
+      <p class="say">서울 집 10채 중 <b>{n10}채</b>는 서른 살이 넘었어요.</p>
+      {houses(n10, f"서울 집 10채 중 {n10}채가 서른 살 이상")}
+      <p class="small">{MASCOT_NAME}를 누르면 다른 이야기도 들려줘요.</p>
+    </div>
+  </div>
+</section>
+{home_news()}
+{ad("home")}
+<section class="go" aria-labelledby="go-h">
+  <h2 id="go-h" class="sec">둘러보기</h2>
+  <div class="tiles">{tile_html}</div>
+</section>
+<script>document.getElementById("gu-select").addEventListener("change",function(e){{if(e.target.value)location.href=e.target.value;}});</script>
+"""
     jsonld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE, "url": BASE + "/",
               "inLanguage": "ko", "description": CFG["site_tagline"]}
-    layout("", f"{SITE} 지도 – 서울 25개 자치구 주택·아파트 노후도 ({Y1})",
+    layout("", f"{SITE} – 서울 주택이 늙어가고 있어요 (25개 자치구 집 나이, {Y1})",
+           f"서울 집 10채 중 {n10}채는 서른 살이 넘었어요. 서울 25개 자치구 주택·아파트 노후도를 지도와 3D로 보고, 매일 서울 집 소식을 확인하세요.",
+           body, active="/", jsonld=jsonld)
+
+
+def build_map():
+    lines = ["구를 누르면 자세한 숫자가 나와요.", "위 단추로 아파트만, 저층 주택만 골라 볼 수 있어요."] + common_lines()[1:3]
+    body = tpl("map.html", Y1=Y1, NOTES=home_notes(), AD_SLOT=ad("home"), PROJECTS_ASOF=ym_label(PROJ["asOf"]),
+               BUDDY=buddy("search", lines=lines))
+    layout("map/", f"서울 주택 노후도 지도 – 25개 자치구 주택·아파트 노후도 ({Y1})",
            f"서울 25개 자치구의 30년 이상 노후 주택 비율을 지도로 봅니다. {Y1}년 서울 전체 {SEOUL['share30']}%, "
            f"아파트 {SEOUL['aptShare30']}%. 아파트와 단독·다세대 주택을 나눠 매년 갱신합니다.",
-           body, active="/", css=("map2d.css",), js=("map2d.js",), data=map_payload(), geo=GEO2D, jsonld=jsonld)
+           body, active="/map/", css=("map2d.css",), js=("map2d.js",), data=map_payload(), geo=GEO2D)
 
 
 def build_3d():
-    body = tpl("3d.html", Y1=Y1)
+    body = tpl("3d.html", Y1=Y1, BUDDY=buddy("cheer", lines=["끌어서 돌려 보세요!", "판을 뚫고 올라온 구가 기준을 넘는 곳이에요.", "‘남쪽에서’를 누르면 높이를 나란히 비교할 수 있어요."]))
     layout("3d/", f"서울 노후도 3D – 자치구별 주택 노후도를 입체로 ({Y1})",
            "서울 25개 자치구를 노후 주택 비율만큼 솟은 3D 기둥으로 보여줍니다. 재개발 노후도 기준 60%와 서울 평균을 반투명 판으로 표시합니다.",
            body, active="/3d/", css=("map3d.css",), js=("vendor/three.min.js", "vendor/OrbitControls.js", "map3d.js"),
@@ -525,13 +581,13 @@ def build_gu_pages():
         pager += f'<a href="{gu_link(next_g)}">{esc(next_g)} ({RANK[next_g]}위) →</a>' if next_g else "<span></span>"
         pager += "</nav>"
         body = f"""
-<nav class="crumbs" aria-label="현재 위치"><a href="/">지도</a> › <a href="/gu/">자치구</a> › {esc(g)}</nav>
+<nav class="crumbs" aria-label="현재 위치"><a href="/">홈</a> › <a href="/gu/">자치구</a> › {esc(g)}</nav>
 <header class="page-head">
   <div class="eyebrow">{esc(g)} 주택 노후도 · {Y1}년 기준 · 25개 구 중 {rk}위</div>
   <h1>{esc(g)} 집은 몇 살일까요?</h1>
 </header>
 <section class="hello" aria-label="한눈에 보기">
-  {mascot(96)}
+  {buddy("hello", lines=[f"{g} 집 10채 중 {n10}채는 서른 살이 넘었어요.", f"{g}는 서울 25개 구 중 {rk}번째로 서른 살 넘은 집이 많아요.", f"{g} 20대 아파트는 {r['aptNext']}%예요. 10년 안에 차례로 서른 살이 돼요."])}
   <div class="bubble">
     <span class="who">{MASCOT_NAME}가 알려 드려요</span>
     <p class="say">{esc(g)} 집 10채 중 <b>{n10}채</b>는 서른 살이 넘었어요.</p>
@@ -579,15 +635,18 @@ def build_gu_index():
     s = SEOUL
     rows += (f'<tr class="seoul"><td>서울 전체</td><td>{fmt(s["total"])}</td><td>{s["share30"]}%</td><td>{s["aptShare30"]}%</td>'
              f'<td>{s["aptNext"]}%</td><td>{s["low20"]}%</td><td>{s["delta"]:+.1f}%p</td></tr>')
+    links = "".join(f'<a href="{gu_link(r["gu"])}">{esc(r["gu"])}<span>{r["share30"]}%</span></a>' for r in sorted(ROWS, key=lambda r: -r["share30"]))
     body = f"""
-<header class="page-head">
+<header class="page-head with-buddy">
   <div class="eyebrow">자치구별 주택 노후도 · {Y1}년 기준 · 서른 살 넘은 집이 많은 순</div>
   <h1>25개 구 집 나이 한눈에 보기</h1>
+  {buddy("search", lines=["구 이름을 누르면 그 구 이야기로 가요.", "표 머리를 보면 무엇을 셌는지 알 수 있어요."])}
   <p class="lede">25개 자치구의 집 나이를 한 표에 모았어요. 구 이름을 누르면 해마다 어떻게 바뀌었는지, 언제 지은 집이 많은지 볼 수 있어요.</p>
 </header>
 <section class="card"><div class="tablewrap"><table class="data">
 <thead><tr><th>자치구</th><th>전체 주택(호)</th><th>30살+ 집</th><th>30살+ 아파트</th><th>20대 아파트</th><th>20살+ 저층</th><th>5년 새 변화</th></tr></thead>
 <tbody>{rows}</tbody></table></div></section>
+<section class="gu-index" aria-label="자치구별 페이지"><h2 class="sec">구별 페이지 바로 가기</h2><div class="gu-links">{links}</div></section>
 """
     layout("gu/", f"자치구별 주택 노후도 순위 {Y1} – 서울 25개 구", f"서울 25개 자치구의 30년 이상 주택 비율, 아파트·저층 주택 노후도, 5년간 변화를 한 표로 비교합니다 ({Y1}년 기준).",
            body, active="/gu/")
@@ -600,9 +659,10 @@ def build_projects():
         if items:
             groups += f'<section class="projects"><h2>{KIND[t]} · {len(items)}곳</h2>' + "".join(project_card(p) for p in items) + "</section>"
     body = f"""
-<header class="page-head">
+<header class="page-head with-buddy">
   <div class="eyebrow">정비사업 진행 현황 · {ym_label(PROJ['asOf'])} 기준 · {len(PROJ['items'])}곳</div>
   <h1>새집으로 바뀌는 중인 동네</h1>
+  {buddy("build", lines=["뚝딱뚝딱, 새집으로 바뀌는 중이에요.", "단계는 바뀔 수 있으니 출처를 꼭 확인해 주세요."])}
   <p class="lede">재건축·재개발·모아타운이 진행 중인 동네를 모았어요. 언론 보도와 서울시 발표를 바탕으로 정리했고, 위치는 동 단위 대략값이에요. 기준월 이후에 단계가 바뀌었을 수 있으니 항목마다 붙은 출처를 확인해 주세요. 지도에도 같은 동네를 기호로 표시했어요.</p>
 </header>
 {groups}
@@ -631,13 +691,90 @@ def news_item(it: dict) -> str:
             f'<span class="ext" aria-label="새 창에서 원문 열기">↗</span></a><span class="meta">{esc(meta)}</span></li>')
 
 
+def post_url(pst: dict) -> str:
+    return f"/news/{pst['id']}/"
+
+
+def post_card(pst: dict) -> str:
+    tags = "".join(f'<span class="tag">{esc(t)}</span>' for t in pst.get("tags", []))
+    return (f'<a class="post-card" href="{post_url(pst)}"><span class="tags">{tags}</span><b>{esc(pst["title"])}</b>'
+            f'<p>{esc(pst["summary"][0])}</p><span class="meta">{pst["date"].replace("-", ".")} · {esc(pst["source"]["org"])} 발표 정리</span></a>')
+
+
 def home_news() -> str:
-    items = NEWS["items"][:3]
-    if not items:
-        return ""
-    return (f'<section class="news-home" aria-label="최근 보도자료"><div class="news-home-head"><h2 class="sec">오늘의 서울 집 소식</h2>'
-            f'<a href="/news/">전체 보기 →</a></div><ul class="news-list">{"".join(news_item(i) for i in items)}</ul>'
-            f'<p class="news-note">서울시·국토교통부가 발표한 보도자료의 제목과 원문 링크예요.</p></section>')
+    if POSTS_PUBLIC and POSTS:
+        inner = f'<div class="post-list">{"".join(post_card(x) for x in POSTS[:3])}</div>'
+        note = "서울시·국토교통부 발표를 바탕으로 정리한 글이에요. 원문 링크는 글마다 있어요."
+    else:
+        items = NEWS["items"][:3]
+        if not items:
+            return ""
+        inner = f'<ul class="news-list">{"".join(news_item(i) for i in items)}</ul>'
+        note = "서울시·국토교통부가 발표한 보도자료의 제목과 원문 링크예요."
+    return (f'<section class="news-home" aria-labelledby="news-h"><div class="sec-head"><h2 id="news-h" class="sec">오늘의 서울집 소식</h2>'
+            f'<a href="/news/">소식 더 보기 →</a></div>{inner}<p class="news-note">{note}</p></section>')
+
+
+def yk_note(pst: dict) -> str:
+    """연식이의 한마디: 글에 나온 구의 집 나이 통계를 붙여 줍니다."""
+    tags = set(pst.get("tags", []))
+    out = []
+    for g in pst.get("gu", []) or []:
+        r = BY.get(g)
+        if not r:
+            continue
+        if "재건축" in tags:
+            out.append(f"{g} 아파트는 {r['aptShare30']}%가 서른 살을 넘었어요(서울 평균 {SEOUL['aptShare30']}%). 20대 아파트도 {r['aptNext']}%라, 10년 안에 연한을 넘기는 단지가 이어져요.")
+        elif tags & {"재개발", "모아타운"}:
+            out.append(f"{g} 단독·다세대 같은 저층 주택은 {r['low20']}%가 스무 살을 넘었어요(서울 평균 {SEOUL['low20']}%, 재개발 노후도 기준 60%).")
+        else:
+            out.append(f"{g} 집은 {r['share30']}%가 서른 살을 넘었어요(서울 평균 {SEOUL['share30']}%).")
+        out[-1] += f' <a href="{gu_link(g)}">{esc(g)} 집 나이 자세히 →</a>'
+    if not out:
+        out.append(f"서울 집 10채 중 {tens(SEOUL['share30'])}채는 이미 서른 살이 넘었어요. 서른 살 넘은 아파트도 {SEOUL['aptShare30']}%예요. "
+                   f'<a href="/map/">자치구별 지도 보기 →</a>')
+    return (f'<aside class="yk-note" aria-label="연식이의 한마디">{buddy("hello", size="64px")}'
+            f'<div><b>연식이의 한마디</b><p>{" ".join(out)}</p><p class="news-note">통계: 국가데이터처 주택총조사 {Y1}년(서울 데이터 허브)</p></div></aside>')
+
+
+def build_posts():
+    if not POSTS_PUBLIC:
+        return
+    for pst in POSTS:
+        src = pst["source"]
+        tags = "".join(f'<span class="tag">{esc(t)}</span>' for t in pst.get("tags", []))
+        gus = " · ".join(f'<a href="{gu_link(g)}">{esc(g)}</a>' for g in pst.get("gu", []) if g in BY)
+        secs = ""
+        for sec in pst["sections"]:
+            inner = "".join(f"<p>{esc(x)}</p>" for x in sec.get("p", []))
+            if sec.get("list"):
+                inner += "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in sec["list"]) + "</ul>"
+            secs += f'<section><h2>{esc(sec["h"])}</h2>{inner}</section>'
+        ai = ('<p>이 글은 초안 작성에 AI의 도움을 받았고, 운영자가 원문과 대조해 확인했어요.</p>' if pst.get("ai_assisted") else "")
+        body = f"""
+<nav class="crumbs" aria-label="현재 위치"><a href="/">홈</a> › <a href="/news/">집 소식</a> › {esc(pst['title'])}</nav>
+<article class="post">
+  <header>
+    <span class="tags">{tags}</span>
+    <h1>{esc(pst['title'])}</h1>
+    <div class="meta"><span>{pst['date'].replace('-', '.')}</span><span>{esc(src['org'])} {esc(src.get('kind', '발표'))} 정리</span>{f'<span>{gus}</span>' if gus else ''}<span>글 · {esc(CFG.get('operator', SITE))}</span></div>
+  </header>
+  <div class="tldr"><b>세 줄 요약</b><ul>{''.join(f'<li>{esc(x)}</li>' for x in pst['summary'])}</ul></div>
+  {secs}
+  {yk_note(pst)}
+  <footer class="post-source">
+    <p><b>원문</b> · {esc(src['org'])} {esc(src.get('dept', ''))}, {src['date'].replace('-', '.')} {esc(src.get('kind', '보도자료'))} 「<a href="{esc(src['url'])}" target="_blank" rel="noopener">{esc(src['title'])}</a>」</p>
+    <p>원문 이용조건: {esc(src.get('license', '원문 누리집 확인'))}. 이 글은 원문 문장을 옮기지 않고 사실관계를 새로 정리했으며, 사진·첨부파일은 쓰지 않았어요.</p>
+    {ai}
+    <p>정보 제공용 글이며 투자 권유나 자문이 아니에요. 정책의 정확한 내용과 이후 변경 사항은 원문과 담당 기관에서 확인해 주세요.</p>
+  </footer>
+</article>
+<nav class="pager" aria-label="다른 소식"><a href="/news/">← 집 소식 목록</a></nav>
+"""
+        ld = {"@context": "https://schema.org", "@type": "BlogPosting", "headline": pst["title"], "datePublished": pst["date"],
+              "inLanguage": "ko", "author": {"@type": "Organization", "name": SITE}, "isBasedOn": src["url"],
+              "mainEntityOfPage": f"{BASE}{post_url(pst)}"}
+        layout(post_url(pst).strip("/") + "/", f"{pst['title']} – {SITE}", pst["summary"][0], body, active="/news/", jsonld=ld)
 
 
 def build_news():
@@ -649,17 +786,21 @@ def build_news():
         groups = "".join(f'<section class="news-day"><h2 class="sec">{day_label(k)}</h2><ul class="news-list">'
                          + "".join(news_item(i) for i in days[k]) + "</ul></section>" for k in keys)
     else:
-        groups = f'<section class="hello">{mascot(80)}<div class="bubble"><p class="say">아직 모은 소식이 없어요.</p><p class="small">매일 낮 12시, 저녁 7시쯤 새 보도자료를 찾아 채워요.</p></div></section>'
+        groups = f'<section class="hello">{buddy("think")}<div class="bubble"><p class="say">아직 모은 소식이 없어요.</p><p class="small">매일 낮 12시, 저녁 7시쯤 새 보도자료를 찾아 채워요.</p></div></section>'
     upd = NEWS.get("updated", "")
     upd_txt = f"{upd[:10].replace('-', '.')} {upd[11:16]} 갱신" if upd else "매일 갱신"
     srcs = "".join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>' for t, u in NEWS_SOURCES)
+    posts_block = (f'<section aria-labelledby="posts-h" class="news-home"><h2 id="posts-h" class="sec">연식이가 정리한 소식</h2>'
+                   f'<div class="post-list">{"".join(post_card(x) for x in POSTS[:30])}</div></section>') if POSTS_PUBLIC and POSTS else ""
     body = f"""
-<header class="page-head">
+<header class="page-head with-buddy">
   <div class="eyebrow">서울 주택·부동산 보도자료 · {upd_txt} · 하루 최대 3건</div>
-  <h1>오늘의 서울 집 소식</h1>
-  <p class="lede">서울특별시와 국토교통부가 낸 보도자료 가운데 서울의 주택·정비사업·부동산 소식을 매일 골라 제목과 원문 링크로 모았어요. 내용은 제목을 눌러 각 기관 누리집에서 확인해 주세요.</p>
+  <h1>오늘의 서울집 소식</h1>
+  {buddy("news", lines=["새 소식은 하루 두 번 찾아와요.", "제목을 누르면 원문으로 가요.", "정책 내용은 꼭 원문으로 확인해 주세요."])}
+  <p class="lede">{'서울특별시와 국토교통부 발표 가운데 서울 집 이야기를 골라 쉽게 풀어 정리했어요. 글마다 원문 링크가 있고, 아래에는 보도자료 원문 목록도 모아 뒀어요.' if POSTS_PUBLIC and POSTS else '서울특별시와 국토교통부가 낸 보도자료 가운데 서울의 주택·정비사업·부동산 소식을 매일 골라 제목과 원문 링크로 모았어요. 내용은 제목을 눌러 각 기관 누리집에서 확인해 주세요.'}</p>
 </header>
-<div class="news-days">{groups}</div>
+{posts_block}
+<section aria-labelledby="raw-h" class="news-days"><h2 id="raw-h" class="sec">{'보도자료 원문 모음' if POSTS_PUBLIC and POSTS else '최근 보도자료'}</h2>{groups}</section>
 <div class="prose news-about">
   <h2>모으는 기준</h2>
   <ul>
@@ -678,9 +819,10 @@ def build_news():
 
 def build_methodology():
     body = f"""
-<header class="page-head">
+<header class="page-head with-buddy">
   <div class="eyebrow">방법론 · 데이터와 계산 방법</div>
   <h1>집 나이는 이렇게 셌어요</h1>
+  {buddy("search", lines=["'서른 살'은 준공 30년이라는 뜻이에요.", "구 평균은 흐름을 보는 참고값이에요."])}
   <p class="lede">이 사이트의 모든 숫자가 어디서 왔고 어떻게 계산했는지 설명해요. 사이트에서 말하는 '서른 살'은 준공 30년, '스무 살'은 준공 20년을 뜻해요.</p>
 </header>
 <div class="prose">
@@ -702,11 +844,13 @@ def build_methodology():
   </ul>
   <h2>법정 노후도와 다른 점</h2>
   <p>재개발 정비구역 지정에 쓰는 법정 노후도는 건축물 <b>동수</b> 기준이고, 구조에 따라 노후 판정 연수(20~30년)가 달라요. 이 사이트의 비율은 주택 <b>호수</b> 기준이라, 다세대 한 동에 여러 호가 있는 경우 등에서 차이가 나요. 또 실제 구역 지정은 블록 단위의 노후도, 접도율, 과소필지, 주민 동의율로 판단하니까, 구 평균은 흐름을 보는 참고값으로 봐 주세요.</p>
-  <h2>재건축·재개발 기준</h2>
+  <h2 id="criteria">재건축·재개발 기준</h2>
   <ul>
-    <li>재건축: 준공 30년이 넘은 아파트는 안전진단 없이 재건축을 시작할 수 있고, 재건축진단은 사업시행인가 전까지 통과하면 돼요 (2025년 6월 시행 도시정비법 개정).</li>
-    <li>재개발: 노후·불량 건축물 60% 이상, 구역 면적 1만㎡ 이상에 과소필지·접도율·호수밀도·노후 연면적 요건 중 하나를 갖춰야 해요.</li>
-    <li>모아타운: 2만~10만㎡ 규모에서 노후도 50% 이상이면 추진할 수 있어요.</li>
+    <li><b>재건축 연한</b>: 준공 30년이 넘은 아파트는 안전진단 없이 재건축을 시작할 수 있고, 재건축진단은 사업시행인가 전까지 통과하면 돼요 (2025년 6월 시행 도시정비법 개정).</li>
+    <li><b>사업성 보정</b>: 서울시 정비기본계획에 따라 땅값이 낮은 곳은 보정계수를 최대 2.0까지 주고, 고밀 단지는 현황 용적률을 인정해요.</li>
+    <li><b>재개발</b>: 노후·불량 건축물 60% 이상, 구역 면적 1만㎡ 이상이 필수예요. 여기에 과소필지 40% 이상, 주택접도율 40% 이하, 호수밀도 60호/ha 이상, 노후 연면적 2/3 이상 중 하나를 갖춰야 해요.</li>
+    <li><b>모아타운</b>: 2만~10만㎡ 규모에서 노후도 50% 이상이면 추진할 수 있어요.</li>
+    <li>지도의 <b>아파트 30살+</b>는 지금 연한을 넘긴 아파트, <b>20대</b>는 10년 안에 연한을 넘길 아파트, <b>단독·다세대 20살+</b>는 재개발 노후도 기준(60%)과 견줘 보는 값이에요.</li>
   </ul>
   <h2>정비사업 현황</h2>
   <p>언론 보도와 서울시 발표를 바탕으로 정리했고, 항목마다 기준월과 출처를 밝혔어요. 지도 위치는 동 단위 대략값이에요. 공식 단계는 서울시 정비사업 정보몽땅에서 확인할 수 있어요.</p>
@@ -736,9 +880,10 @@ def build_data_page():
         f'<a href="{esc(u)}" rel="noopener" target="_blank">서울 데이터 허브에서 보기 →</a></div>'
         for k, t, d, u in sources)
     body = f"""
-<header class="page-head">
+<header class="page-head with-buddy">
   <div class="eyebrow">데이터 출처 · {YEARS[0]}~{Y1}년 · 해마다 갱신</div>
   <h1>숫자는 여기서 왔어요</h1>
+  {buddy("search", lines=["숫자는 모두 공공 통계에서 왔어요.", "새 통계는 해마다 5월에 반영해요."])}
   <p class="lede">이 사이트의 모든 숫자는 아래 공공 통계를 가공한 거예요. 원자료는 각 기관 사이트에서 직접 확인할 수 있어요.</p>
 </header>
 <section class="sources" aria-label="주택 통계 출처">{cards}</section>
@@ -767,7 +912,7 @@ def build_about():
   <p class="lede">{esc(SITE)}는 공공 통계로 서울의 집이 몇 살인지 보여주는 시각화 사이트예요. 자치구별로 아파트와 단독·다세대 주택의 나이를 나눠 보고, 해마다 새 통계로 고쳐요.</p>
 </header>
 <section class="hello" aria-label="마스코트 소개">
-  {mascot(104)}
+  {buddy("hello", lines=["반가워요! 저는 연식이예요.", "안경은 숫자를 꼼꼼히 보려고 썼어요.", "어느 동네가 좋다 나쁘다는 말은 하지 않아요."])}
   <div class="bubble">
     <span class="who">마스코트 소개</span>
     <p class="say">안녕하세요, {MASCOT_NAME}예요.</p>
@@ -848,10 +993,10 @@ def build_404():
   <h1>앗, 길을 잃었어요</h1>
 </header>
 <section class="hello" aria-label="안내">
-  {mascot(96)}
+  {buddy("think", lines=["여기엔 집이 없어요…", "홈으로 돌아가 볼까요?"])}
   <div class="bubble">
     <p class="say">이 주소에는 집이 없어요.</p>
-    <p class="small">주소가 바뀌었거나 없는 페이지예요. <a href="/">지도</a>나 <a href="/gu/">자치구 목록</a>에서 다시 찾아 주세요.</p>
+    <p class="small">주소가 바뀌었거나 없는 페이지예요. <a href="/">홈</a>이나 <a href="/map/">지도</a>에서 다시 찾아 주세요.</p>
   </div>
 </section>
 """
@@ -877,10 +1022,12 @@ def main():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
     build_home()
+    build_map()
     build_3d()
     build_gu_index()
     build_gu_pages()
     build_projects()
+    build_posts()
     build_news()
     build_methodology()
     build_data_page()
