@@ -1,7 +1,7 @@
 // 사용법: dist/를 localhost:8765에서 띄운 뒤 `node scripts/check_bubbles.js` (Playwright 필요). 모든 페이지·화면 폭에서 연식이 말풍선이 화면 안에 보이는지 확인합니다.
 // Tap every 연식이 on every page at several phone/desktop widths; report bubbles that leave the screen or are hidden.
 const { chromium } = require('playwright');
-const pages = ['/', '/map/', '/gu/', '/gu/nowon/', '/gu/gangnam/', '/projects/', '/news/', '/methodology/', '/data/', '/about/', '/404.html'];
+const pages = ['/', '/map/', '/gu/', '/gu/nowon/', '/gu/gangnam/', '/projects/', '/news/', '/data/', '/about/', '/404.html'];
 const sizes = (process.env.SIZES || '320,360,375,390,414,768,1024,1280').split(',').map(Number);
 (async () => {
   const b = await chromium.launch();

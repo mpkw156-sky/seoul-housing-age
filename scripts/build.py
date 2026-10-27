@@ -220,7 +220,7 @@ def ad(slot: str) -> str:
     return ""
 
 
-NAV = [("/", "홈"), ("/map/", "지도"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/methodology/", "방법론"), ("/data/", "데이터")]
+NAV = [("/", "홈"), ("/map/", "지도"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/data/", "데이터 안내")]
 
 
 def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css=(), js=(), data=None, geo=None,
@@ -293,7 +293,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <footer class="site-foot gutter"><div class="inner">
 <p>자료: 국가데이터처 주택총조사 (서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」, 공공누리 제1유형), {Y1}년 기준. 정비사업 현황은 언론 보도·서울시 발표 기준({ym_label(PROJ['asOf'])})입니다.</p>
 <p>이 사이트는 공공 통계로 집 나이를 보여주는 정보 서비스예요. 투자 권유나 자문이 아니에요. 노후도는 주택 호수로 계산한 근사치라 법정 노후도와 다를 수 있어요.</p>
-<div class="links"><a href="/news/">집 소식</a><a href="/about/">소개·출처</a><a href="/methodology/">방법론</a><a href="/data/">데이터 출처</a><a href="/privacy/">개인정보처리방침</a></div>
+<div class="links"><a href="/news/">집 소식</a><a href="/about/">소개</a><a href="/data/">데이터 안내</a><a href="/privacy/">개인정보처리방침</a></div>
 <p>© {TODAY.year} {esc(CFG.get('operator', SITE))}{contact} · 마지막 빌드 {TODAY.isoformat()}</p>
 </div></footer>
 {datas}
@@ -818,54 +818,8 @@ def build_news():
            body, active="/news/")
 
 
-def build_methodology():
-    body = f"""
-<header class="page-head with-buddy">
-  <div class="eyebrow">방법론 · 데이터와 계산 방법</div>
-  <h1>집 나이는 이렇게 셌어요</h1>
-  {buddy("search", lines=["'서른 살'은 준공 30년이라는 뜻이에요.", "구 평균은 흐름을 보는 참고값이에요."])}
-  <p class="lede">이 사이트의 모든 숫자가 어디서 왔고 어떻게 계산했는지 설명해요. 사이트에서 말하는 '서른 살'은 준공 30년, '스무 살'은 준공 20년을 뜻해요.</p>
-</header>
-<div class="prose">
-  <h2>원자료</h2>
-  <p>국가데이터처 주택총조사를 서울특별시가 서울 데이터 허브에 공개한 두 통계를 써요. 둘 다 공공누리 제1유형(출처를 밝히면 상업적 이용·변경 가능)이에요.</p>
-  <ul>
-    <li>「서울시 노후기간별 주택현황 통계」: 자치구·주택종류별로 지은 지 20~30년 미만, 30년 이상 된 주택 수</li>
-    <li>「서울시 건축연도별 주택현황 통계」: 자치구·주택종류·건축연도별 주택 수. 전체 주택 수와 지은 연도 분포에 씁니다.</li>
-  </ul>
-  <p>지금 반영된 기간은 {YEARS[0]}~{Y1}년이에요. 개인정보 보호를 위해 5호 미만이라 비공개(x)로 처리된 칸은 0으로 계산했어요.</p>
-  <h2>지표 정의</h2>
-  <ul>
-    <li><b>서른 살 넘은 집 (30년 이상 주택 비율)</b> = 30년 이상 된 주택 ÷ 전체 주택</li>
-    <li><b>서른 살 넘은 아파트</b> = 30년 이상 된 아파트 ÷ 전체 아파트. 재건축 연한(준공 30년)을 넘긴 아파트의 비율이에요.</li>
-    <li><b>20대 아파트</b> = 20~30년 된 아파트 ÷ 전체 아파트. 10년 안에 서른 살이 되는 아파트예요.</li>
-    <li><b>스무 살 넘은 저층 주택</b> = 20년 이상 된 단독·다세대·연립·비주거용 건물 내 주택 ÷ 전체 저층 주택</li>
-    <li><b>5년 새 늘어난 폭</b> = {Y1}년 서른 살 넘은 집 비율 − {Y0}년 비율 (%p)</li>
-    <li><b>'10채 중 몇 채'</b> = 위 비율을 10으로 나눠 반올림한 값이에요. 쉽게 읽으라고 붙인 표현이라 정확한 값은 % 숫자를 봐 주세요.</li>
-  </ul>
-  <h2>법정 노후도와 다른 점</h2>
-  <p>재개발 정비구역 지정에 쓰는 법정 노후도는 건축물 <b>동수</b> 기준이고, 구조에 따라 노후 판정 연수(20~30년)가 달라요. 이 사이트의 비율은 주택 <b>호수</b> 기준이라, 다세대 한 동에 여러 호가 있는 경우 등에서 차이가 나요. 또 실제 구역 지정은 블록 단위의 노후도, 접도율, 과소필지, 주민 동의율로 판단하니까, 구 평균은 흐름을 보는 참고값으로 봐 주세요.</p>
-  <h2 id="criteria">재건축·재개발 기준</h2>
-  <ul>
-    <li><b>재건축 연한</b>: 준공 30년이 넘은 아파트는 안전진단 없이 재건축을 시작할 수 있고, 재건축진단은 사업시행인가 전까지 통과하면 돼요 (2025년 6월 시행 도시정비법 개정).</li>
-    <li><b>사업성 보정</b>: 서울시 정비기본계획에 따라 땅값이 낮은 곳은 보정계수를 최대 2.0까지 주고, 고밀 단지는 현황 용적률을 인정해요.</li>
-    <li><b>재개발</b>: 노후·불량 건축물 60% 이상, 구역 면적 1만㎡ 이상이 필수예요. 여기에 과소필지 40% 이상, 주택접도율 40% 이하, 호수밀도 60호/ha 이상, 노후 연면적 2/3 이상 중 하나를 갖춰야 해요.</li>
-    <li><b>모아타운</b>: 2만~10만㎡ 규모에서 노후도 50% 이상이면 추진할 수 있어요.</li>
-    <li>지도의 <b>아파트 30살+</b>는 지금 연한을 넘긴 아파트, <b>20대</b>는 10년 안에 연한을 넘길 아파트, <b>단독·다세대 20살+</b>는 재개발 노후도 기준(60%)과 견줘 보는 값이에요.</li>
-  </ul>
-  <h2>정비사업 현황</h2>
-  <p>언론 보도와 서울시 발표를 바탕으로 정리했고, 항목마다 기준월과 출처를 밝혔어요. 지도 위치는 동 단위 대략값이에요. 공식 단계는 서울시 정비사업 정보몽땅에서 확인할 수 있어요.</p>
-  <h2>갱신 주기</h2>
-  <p>원자료는 매년 4월 무렵 새 연도가 공개돼요. 이 사이트는 매년 5월 1일 자동으로 새 자료를 받아 다시 계산하고, 검증을 통과하면 운영자 확인을 거쳐 반영해요. 계산 코드와 데이터는 모두 <a href="https://github.com/mpkw156-sky/seoul-housing-age" rel="noopener">GitHub 저장소</a>에 공개돼 있어요.</p>
-  <h2>경계 데이터</h2>
-  <p>자치구 경계는 통계청 센서스용 행정구역경계(2013)를 간략화한 공개 데이터(southkorea/seoul-maps)를 써요. 표시용으로 단순화해서 실제 경계와 조금 다를 수 있어요.</p>
-</div>
-"""
-    layout("methodology/", f"방법론 – {SITE}", "주택 노후도 지표의 원자료, 정의, 계산식, 법정 노후도와의 차이, 갱신 주기를 설명합니다.",
-           body, active="/methodology/")
-
-
 def build_data_page():
+    """데이터 안내: 데이터 출처 + 계산 방법(예전 방법론) + 재건축·재개발 기준 + 갱신 주기를 한 페이지에."""
     sources = [
         ("주택 노후기간 통계", "서울시 노후기간별 주택현황 통계",
          "자치구·주택종류별로 지은 지 20~30년 미만, 30년 이상 된 주택 수",
@@ -880,27 +834,80 @@ def build_data_page():
         f'<dt>이용 조건</dt><dd>공공누리 제1유형 (출처 표시)</dd><dt>사이트 반영</dt><dd>{YEARS[0]}~{Y1}년</dd></dl>'
         f'<a href="{esc(u)}" rel="noopener" target="_blank">서울 데이터 허브에서 보기 →</a></div>'
         for k, t, d, u in sources)
+    toc = [("sources", "데이터 출처"), ("method", "계산 방법"), ("legal", "법정 노후도와 다른 점"), ("criteria", "재건축·재개발 기준"),
+           ("other", "그 밖의 출처"), ("update", "갱신 주기")]
+    toc_html = "".join(f'<a href="#{i}">{t}</a>' for i, t in toc)
     body = f"""
 <header class="page-head with-buddy">
-  <div class="eyebrow">데이터 출처 · {YEARS[0]}~{Y1}년 · 해마다 갱신</div>
-  <h1>숫자는 여기서 왔어요</h1>
-  {buddy("search", lines=["숫자는 모두 공공 통계에서 왔어요.", "새 통계는 해마다 5월에 반영해요."])}
-  <p class="lede">이 사이트의 모든 숫자는 아래 공공 통계를 가공한 거예요. 원자료는 각 기관 사이트에서 직접 확인할 수 있어요.</p>
+  <div class="eyebrow">데이터 안내 · 출처와 계산 방법 · {YEARS[0]}~{Y1}년 · 해마다 갱신</div>
+  <h1>숫자는 어디서 왔고, 어떻게 셌을까요?</h1>
+  {buddy("search", lines=["숫자는 모두 공공 통계에서 왔어요.", "'서른 살'은 준공 30년이라는 뜻이에요.", "구 평균은 흐름을 보는 참고값이에요.", "새 통계는 해마다 5월에 반영해요."])}
+  <p class="lede">이 사이트의 모든 숫자가 어떤 공공 통계에서 왔고 어떻게 계산했는지 한곳에 모았어요. 사이트에서 말하는 '서른 살'은 준공 30년, '스무 살'은 준공 20년을 뜻해요.</p>
 </header>
-<section class="sources" aria-label="주택 통계 출처">{cards}</section>
-<div class="prose">
-  <h2>그 밖의 출처</h2>
+<nav class="toc" aria-label="이 페이지 차례">{toc_html}</nav>
+
+<section id="sources" class="data-sec" aria-labelledby="sources-h">
+  <h2 id="sources-h">데이터 출처</h2>
+  <p class="sec-lede">국가데이터처 주택총조사를 서울특별시가 서울 데이터 허브에 공개한 두 통계를 써요. 원자료는 각 기관 사이트에서 직접 확인할 수 있어요.</p>
+  <div class="sources">{cards}</div>
+</section>
+
+<section id="method" class="data-sec prose" aria-labelledby="method-h">
+  <h2 id="method-h">계산 방법</h2>
+  <p>지금 반영된 기간은 {YEARS[0]}~{Y1}년이에요. 개인정보 보호를 위해 5호 미만이라 비공개(x)로 처리된 칸은 0으로 계산했어요.</p>
   <ul>
-    <li>정비사업 현황: 항목마다 표시한 언론 보도와 서울시 발표 (<a href="/projects/">정비사업 현황</a>에서 기준월과 함께 확인)</li>
-    <li>자치구 경계: 통계청 센서스용 행정구역경계(2013), <a href="https://github.com/southkorea/seoul-maps" rel="noopener" target="_blank">southkorea/seoul-maps</a> 가공본</li>
-    <li>보도자료 모음: <a href="https://www.seoul.go.kr/news/news_report.do" rel="noopener" target="_blank">서울특별시 보도자료</a>, <a href="https://www.molit.go.kr/USR/NEWS/m_71/lst.jsp" rel="noopener" target="_blank">국토교통부 보도자료</a>의 제목과 원문 링크 (<a href="/news/">보도자료 모음</a>, 매일 갱신)</li>
+    <li><b>서른 살 넘은 집 (30년 이상 주택 비율)</b> = 30년 이상 된 주택 ÷ 전체 주택</li>
+    <li><b>서른 살 넘은 아파트</b> = 30년 이상 된 아파트 ÷ 전체 아파트. 재건축 연한(준공 30년)을 넘긴 아파트의 비율이에요.</li>
+    <li><b>20대 아파트</b> = 20~30년 된 아파트 ÷ 전체 아파트. 10년 안에 서른 살이 되는 아파트예요.</li>
+    <li><b>스무 살 넘은 저층 주택</b> = 20년 이상 된 단독·다세대·연립·비주거용 건물 내 주택 ÷ 전체 저층 주택</li>
+    <li><b>5년 새 늘어난 폭</b> = {Y1}년 서른 살 넘은 집 비율 − {Y0}년 비율 (%p)</li>
+    <li><b>'10채 중 몇 채'</b> = 위 비율을 10으로 나눠 반올림한 값이에요. 쉽게 읽으라고 붙인 표현이라 정확한 값은 % 숫자를 봐 주세요.</li>
   </ul>
-  <h2>갱신 주기</h2>
-  <p>원자료는 매년 4월 무렵 새 연도가 공개되고, 이 사이트는 매년 5월에 반영해요. 지표 정의와 계산 방법은 <a href="/methodology/">방법론</a>에 있어요.</p>
-</div>
+</section>
+
+<section id="legal" class="data-sec prose" aria-labelledby="legal-h">
+  <h2 id="legal-h">법정 노후도와 다른 점</h2>
+  <p>재개발 정비구역 지정에 쓰는 법정 노후도는 건축물 <b>동수</b> 기준이고, 구조에 따라 노후 판정 연수(20~30년)가 달라요. 이 사이트의 비율은 주택 <b>호수</b> 기준이라, 다세대 한 동에 여러 호가 있는 경우 등에서 차이가 나요. 또 실제 구역 지정은 블록 단위의 노후도, 접도율, 과소필지, 주민 동의율로 판단하니까, 구 평균은 흐름을 보는 참고값으로 봐 주세요.</p>
+</section>
+
+<section id="criteria" class="data-sec prose" aria-labelledby="criteria-h">
+  <h2 id="criteria-h">재건축·재개발 기준</h2>
+  <ul>
+    <li><b>재건축 연한</b>: 준공 30년이 넘은 아파트는 안전진단 없이 재건축을 시작할 수 있고, 재건축진단은 사업시행인가 전까지 통과하면 돼요 (2025년 6월 시행 도시정비법 개정).</li>
+    <li><b>사업성 보정</b>: 서울시 정비기본계획에 따라 땅값이 낮은 곳은 보정계수를 최대 2.0까지 주고, 고밀 단지는 현황 용적률을 인정해요.</li>
+    <li><b>재개발</b>: 노후·불량 건축물 60% 이상, 구역 면적 1만㎡ 이상이 필수예요. 여기에 과소필지 40% 이상, 주택접도율 40% 이하, 호수밀도 60호/ha 이상, 노후 연면적 2/3 이상 중 하나를 갖춰야 해요.</li>
+    <li><b>모아타운</b>: 2만~10만㎡ 규모에서 노후도 50% 이상이면 추진할 수 있어요.</li>
+    <li>지도의 <b>아파트 30살+</b>는 지금 연한을 넘긴 아파트, <b>20대</b>는 10년 안에 연한을 넘길 아파트, <b>단독·다세대 20살+</b>는 재개발 노후도 기준(60%)과 견줘 보는 값이에요.</li>
+  </ul>
+</section>
+
+<section id="other" class="data-sec prose" aria-labelledby="other-h">
+  <h2 id="other-h">그 밖의 출처</h2>
+  <ul>
+    <li><b>정비사업 현황</b>: 언론 보도와 서울시 발표를 바탕으로 정리했고, 항목마다 기준월과 출처를 밝혔어요. 지도 위치는 동 단위 대략값이에요. 공식 단계는 서울시 정비사업 정보몽땅에서 확인할 수 있어요. (<a href="/projects/">정비사업 현황</a>)</li>
+    <li><b>집 소식</b>: <a href="https://www.seoul.go.kr/news/news_report.do" rel="noopener" target="_blank">서울특별시 보도자료</a>, <a href="https://www.molit.go.kr/USR/NEWS/m_71/lst.jsp" rel="noopener" target="_blank">국토교통부 보도자료</a>의 제목과 원문 링크 (<a href="/news/">집 소식</a>, 매일 갱신)</li>
+    <li><b>자치구 경계</b>: 통계청 센서스용 행정구역경계(2013)를 간략화한 공개 데이터(<a href="https://github.com/southkorea/seoul-maps" rel="noopener" target="_blank">southkorea/seoul-maps</a>)예요. 표시용으로 단순화해서 실제 경계와 조금 다를 수 있어요.</li>
+  </ul>
+</section>
+
+<section id="update" class="data-sec prose" aria-labelledby="update-h">
+  <h2 id="update-h">갱신 주기</h2>
+  <p>원자료는 매년 4월 무렵 새 연도가 공개돼요. 이 사이트는 매년 5월 1일 자동으로 새 자료를 받아 다시 계산하고, 검증을 통과하면 운영자 확인을 거쳐 반영해요. 계산 코드와 데이터는 모두 <a href="https://github.com/mpkw156-sky/seoul-housing-age" rel="noopener">GitHub 저장소</a>에 공개돼 있어요.</p>
+</section>
 """
-    layout("data/", f"데이터 출처 – {SITE}",
-           "서울 주택 노후도 사이트가 쓰는 공공 통계(국가데이터처 주택총조사, 서울 데이터 허브)의 출처와 이용 조건.", body, active="/data/")
+    layout("data/", f"데이터 안내 – 출처와 계산 방법 · {SITE}",
+           "서울 주택 노후도 사이트가 쓰는 공공 통계(국가데이터처 주택총조사, 서울 데이터 허브)의 출처와 이용 조건, 지표 계산 방법, 법정 노후도와의 차이, 재건축·재개발 기준, 갱신 주기.",
+           body, active="/data/")
+
+
+def build_methodology():
+    """예전 /methodology/ 주소는 데이터 안내의 계산 방법으로 보냅니다 (#criteria 같은 위치 표시는 그대로 넘깁니다)."""
+    body = """
+<header class="page-head"><h1>방법론은 '데이터 안내'로 옮겼어요</h1>
+<p class="lede"><a href="/data/#method">데이터 안내 › 계산 방법</a>으로 이동하고 있어요.</p></header>
+<script>location.replace("/data/" + (location.hash || "#method"));</script>
+"""
+    layout("methodology/", f"데이터 안내로 이동 – {SITE}", "방법론 페이지는 데이터 안내로 옮겼습니다.", body, active="/data/", noindex=True)
 
 
 def build_about():

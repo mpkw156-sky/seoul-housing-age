@@ -332,3 +332,9 @@ article.post section p { margin: 0; color: var(--ink-2); }
 }
 .chk.view3d { background: var(--soft); border-radius: 999px; padding: 6px 14px 6px 10px; min-height: 40px; }
 .chk.view3d b { font-weight: 500; color: var(--ink); }
+/* data guide: in-page chips + sections */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { text-decoration: none; font-size: var(--fs-sm); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; min-height: 40px; display: inline-flex; align-items: center; }
+.toc a:hover { border-color: var(--accent); color: var(--accent); }
+.data-sec { display: grid; gap: 12px; scroll-margin-top: 16px; }
+.data-sec .sec-lede { margin: 0; color: var(--ink-2); max-width: 42em; }

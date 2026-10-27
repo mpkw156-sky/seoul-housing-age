@@ -1,4 +1,12 @@
 /* 연식이 반응: 눈이 커서를 따라보고, 누르면 폴짝 뛰며 한마디 합니다. 동작 줄이기 설정이면 눈 따라보기와 점프를 끕니다. */
+/* 휴대폰 메뉴: 지금 보고 있는 탭이 가려지지 않게 메뉴를 옆으로 밀어 둡니다. */
+(function () {
+  var nav = document.querySelector(".site-nav"), cur = nav && nav.querySelector('[aria-current="page"]');
+  if (!nav || !cur || nav.scrollWidth <= nav.clientWidth) return;
+  var want = cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2;
+  nav.scrollLeft = Math.max(0, Math.min(want, nav.scrollWidth - nav.clientWidth));
+})();
+
 (function () {
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var fine = window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches;
