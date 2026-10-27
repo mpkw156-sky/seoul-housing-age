@@ -1,6 +1,8 @@
+/* 3D view for the map tab. Loaded on demand; window.startMap3D(geo) builds it inside #v3d. */
+window.startMap3D = function (GEO) {
 const DATA = JSON.parse(document.getElementById("site-data").textContent);
-const GEO = JSON.parse(document.getElementById("geo-data").textContent);
 const S = DATA.seoul;
+const $ = id => document.getElementById("d3-" + id);
 const METRICS = {
   share30: { label: "서른 살 넘은 집 비율", unit: "%", full: 60, breaks: [20, 25, 30, 40], ticks: ["20%↓", "20–25", "25–30", "30–40", "40%↑"], ref: S.share30, refName: "서울 평균 " + S.share30 + "%" },
   delta: { label: `서른 살 넘은 집, ${DATA.y0}→${DATA.y1} 늘어난 폭`, unit: "%p", plus: true, full: 25, breaks: [5, 10, 15, 20], ticks: ["5%p↓", "5–10", "10–15", "15–20", "20%p↑"], ref: +(S.share30 - S.share30_prev).toFixed(1), refName: "서울 전체 +" + (S.share30 - S.share30_prev).toFixed(1) + "%p" },
@@ -12,8 +14,8 @@ const KIND = { rebuild: "재건축 진행", redev: "재개발 · 신속통합기
 const RAMP = ["--r0", "--r1", "--r2", "--r3", "--r4"];
 const HMAX = 20;
 const byGu = Object.fromEntries(DATA.rows.map(r => [r.gu, r]));
-let metric = "low20";
-try { const s = localStorage.getItem("aging3d-metric"); if (s && METRICS[s]) metric = s; } catch (e) {}
+let metric = (document.querySelector('.controls .seg button[data-m][aria-pressed="true"]') || {}).dataset?.m || "share30";
+if (!METRICS[metric]) metric = "share30";
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fmt = n => n.toLocaleString("ko-KR");
 const short = g => g.length > 2 ? g.replace(/구$/, "") : g;
@@ -23,9 +25,10 @@ const hOf = v => Math.max(0.15, v / METRICS[metric].full * HMAX);
 const CX = GEO.w / 2, CY = GEO.h / 2, SC = 10;
 const W = (x, y) => [(x - CX) / SC, (y - CY) / SC];
 
-const stage = document.getElementById("stage");
-const labelsEl = document.getElementById("labels");
-const infoEl = document.getElementById("info");
+const stage = $("stage");
+const labelsEl = $("labels");
+const infoEl = $("info");
+const pinsOn = () => document.getElementById("sites-on").checked;
 let selected = null, selectedSite = null;
 
 function sortedRows() { return [...DATA.rows].sort((a, b) => b[metric] - a[metric]); }
@@ -45,18 +48,18 @@ function readingText() {
 function renderPanels() {
   const M = METRICS[metric];
   const colors = RAMP.map(tok);
-  document.getElementById("reading").innerHTML = readingText();
-  document.getElementById("legend").innerHTML =
+  $("reading").innerHTML = readingText();
+  $("legend").innerHTML =
     `<div class="title">${M.label}<br>높이: 바닥 0 → 판 = ${M.refName}</div><div class="bins">${colors.map(c => `<div style="background:${c}"></div>`).join("")}</div><div class="ticks">${M.ticks.map(t => `<span>${t}</span>`).join("")}</div>` +
     `<div class="keys"><span><i style="background:var(--mk-rebuild)"></i>재건축</span><span><i style="background:var(--mk-redev);border-radius:50%"></i>재개발 후보지</span><span><i style="background:var(--mk-moa);clip-path:polygon(50% 0,100% 100%,0 100%)"></i>모아타운</span></div>`;
-  document.getElementById("rank-title").textContent = M.label;
-  document.getElementById("rank-sub").textContent = "파란 선: " + M.refName;
+  $("rank-title").textContent = M.label;
+  $("rank-sub").textContent = "파란 선: " + M.refName;
   const rows = sortedRows(), max = Math.max(...rows.map(r => r[metric]), M.ref) * 1.04;
-  document.getElementById("rows").innerHTML = rows.map((r, i) => {
+  $("rows").innerHTML = rows.map((r, i) => {
     const b = binOf(r[metric], M.breaks);
     return `<div class="row${selected === r.gu ? " hl" : ""}" tabindex="0" role="button" data-gu="${r.gu}"><span class="rk">${i + 1}</span><span class="nm">${r.gu}</span><span class="bar"><span style="width:${(r[metric] / max * 100).toFixed(1)}%;background:${colors[b]}"></span><span class="ref" style="left:${(M.ref / max * 100).toFixed(1)}%"></span></span><span class="v">${M.plus ? "+" : ""}${r[metric].toFixed(1)}${M.unit}</span></div>`;
   }).join("");
-  document.querySelectorAll(".controls .seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === metric)));
+  document.querySelectorAll(".controls .seg button[data-m]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === metric)));
   renderInfo();
 }
 
@@ -94,7 +97,7 @@ try {
   renderer = new THREE.WebGLRenderer({ antialias: true });
   ok = true;
 } catch (e) {
-  stage.insertAdjacentHTML("beforeend", `<div class="nogl"><p>이 브라우저에서는 3D 화면을 그릴 수 없어요.<br>아래 순위와 <a href="/">평면 지도</a>로 같은 내용을 볼 수 있어요.</p></div>`);
+  stage.insertAdjacentHTML("beforeend", `<div class="nogl"><p>이 브라우저에서는 3D 화면을 그릴 수 없어요.<br>'3D로 보기'를 끄면 평면 지도로 같은 내용을 볼 수 있어요.</p></div>`);
 }
 
 function buildScene() {
@@ -181,7 +184,7 @@ function setView(v, instant) {
   const p = VIEWS[v]; const narrow = Math.min(2.3, Math.max(1, 1.55 / (stage.clientWidth / stage.clientHeight)));
   const to = new THREE.Vector3(p[0] * narrow, p[1] * narrow, p[2] * narrow);
   const tgt = new THREE.Vector3(0, v === "top" ? 0 : 5, 0);
-  document.querySelectorAll(".views .seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v)));
+  document.querySelectorAll(".v3d .views .seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v)));
   if (instant || reduced) { camera.position.copy(to); controls.target.copy(tgt); controls.update(); camAnim = null; return; }
   camAnim = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tgt, t: 0 };
 }
@@ -219,7 +222,7 @@ function select(gu, site) {
   if (site != null) selected = null;
   pins.forEach((p, i) => p.ring.visible = i === selectedSite);
   paintDistricts();
-  document.querySelectorAll(".row").forEach(r => r.classList.toggle("hl", r.dataset.gu === selected));
+  $("rows").querySelectorAll(".row").forEach(r => r.classList.toggle("hl", r.dataset.gu === selected));
   renderInfo();
 }
 
@@ -228,7 +231,7 @@ function pick(ev) {
   pointer.x = ((ev.clientX - r.left) / r.width) * 2 - 1; pointer.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
   const objs = [];
-  if (document.getElementById("pins-on").checked) pins.forEach(p => objs.push(p.head));
+  if (pinsOn()) pins.forEach(p => objs.push(p.head));
   Object.values(districts).forEach(d => objs.push(d.mesh));
   const hit = raycaster.intersectObjects(objs, false)[0];
   if (!hit) return null;
@@ -250,7 +253,7 @@ function bindPointer() {
   });
   el.addEventListener("wheel", stopSpin, { passive: true });
 }
-function stopSpin() { const s = document.getElementById("spin"); if (s.checked) { s.checked = false; controls.autoRotate = false; } }
+function stopSpin() { const s = $("spin"); if (s.checked) { s.checked = false; controls.autoRotate = false; } }
 
 function project(x, y, z) {
   const v = new THREE.Vector3(x, y, z).project(camera);
@@ -263,7 +266,7 @@ function animate() {
   for (const d of Object.values(districts)) { d.h += (d.target - d.h) * k; d.mesh.scale.z = d.h; }
   const gd = glass.userData; gd.h = gd.h == null ? gd.target : gd.h + (gd.target - gd.h) * k;
   glass.position.y = gd.h; glassEdge.position.y = gd.h;
-  const showPins = document.getElementById("pins-on").checked;
+  const showPins = pinsOn();
   pins.forEach(p => {
     const base = districts[p.m.gu].h, top = base + 3.2;
     p.grp.visible = showPins;
@@ -298,21 +301,21 @@ function animate() {
 }
 
 /* ---------- wiring ---------- */
-document.querySelectorAll(".controls .seg").forEach(s => s.addEventListener("click", e => {
-  const b = e.target.closest("button"); if (!b) return;
-  metric = b.dataset.m; try { localStorage.setItem("aging3d-metric", metric); } catch (err) {}
+document.querySelectorAll(".controls .seg").forEach(sg => sg.addEventListener("click", e => {
+  const b = e.target.closest("button[data-m]"); if (!b) return;
+  metric = b.dataset.m;
   if (ok) setTargets(); renderPanels();
 }));
-document.querySelector(".views .seg").addEventListener("click", e => { const b = e.target.closest("button"); if (b && ok) { stopSpin(); setView(b.dataset.v); } });
-document.getElementById("spin").addEventListener("change", e => { if (ok) controls.autoRotate = e.target.checked; });
-document.getElementById("pins-on").addEventListener("change", () => { if (selectedSite != null) select(null); });
-const rowsEl = document.getElementById("rows");
+document.querySelector(".v3d .views .seg").addEventListener("click", e => { const b = e.target.closest("button"); if (b && ok) { stopSpin(); setView(b.dataset.v); } });
+$("spin").addEventListener("change", e => { if (ok) controls.autoRotate = e.target.checked; });
+document.getElementById("sites-on").addEventListener("change", () => { if (selectedSite != null) select(null); });
+const rowsEl = $("rows");
 rowsEl.addEventListener("click", e => { const r = e.target.closest(".row"); if (r) select(r.dataset.gu === selected ? null : r.dataset.gu); });
 rowsEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.closest(".row")) { e.preventDefault(); const g = e.target.closest(".row").dataset.gu; select(g === selected ? null : g); } });
 const mq = matchMedia("(prefers-color-scheme: dark)");
 const retheme = () => { applyTheme(); renderPanels(); };
 mq.addEventListener && mq.addEventListener("change", retheme);
-new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 renderPanels();
 if (ok) buildScene();
+};

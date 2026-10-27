@@ -78,7 +78,7 @@ function render() {
     const b = binOf(r[metric], M.breaks);
     return `<div class="row" tabindex="0" data-gu="${r.gu}"><span class="rk">${i + 1}</span><span class="nm">${r.gu}${showCand && CANDS.includes(r.gu) ? "<i>●</i>" : ""}</span><span class="bar"><span style="width:${(r[metric] / max * 100).toFixed(1)}%;background:${colors[b]}"></span><span class="avg${M.thr ? " thr" : ""}" style="left:${(M.ref / max * 100).toFixed(1)}%"></span></span><span class="v">${M.plus ? "+" : ""}${r[metric].toFixed(1)}${M.unit}</span></div>`;
   }).join("");
-  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === metric)));
+  document.querySelectorAll(".controls .seg button[data-m]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === metric)));
   document.querySelectorAll("path.cand").forEach(p => p.style.display = showCand && CANDS.includes(p.dataset.gu) ? "" : "none");
   const sitesOn = document.getElementById("sites-on").checked;
   gMk.style.display = sitesOn ? "" : "none";
@@ -114,7 +114,7 @@ function placeTip(cx, cy) {
 }
 function clearFocus() {
   tip.hidden = true; hi.style.display = "none";
-  document.querySelectorAll(".row.hl").forEach(r => r.classList.remove("hl"));
+  document.querySelectorAll("#rows .row.hl").forEach(r => r.classList.remove("hl"));
   markerEls.forEach(e => e.classList.remove("on"));
   document.querySelectorAll(".site.on").forEach(e => e.classList.remove("on"));
 }
@@ -122,7 +122,7 @@ function focusGu(gu) {
   clearFocus(); if (!gu) return;
   const r = byGu[gu];
   hi.setAttribute("d", GEO.gu[gu].d); hi.style.display = "";
-  document.querySelectorAll(".row").forEach(x => x.classList.toggle("hl", x.dataset.gu === gu));
+  document.querySelectorAll("#rows .row").forEach(x => x.classList.toggle("hl", x.dataset.gu === gu));
   tip.innerHTML = `<h4>${gu}</h4><dl>
     <dt>서른 살 넘은 집</dt><dd>${r.share30}%</dd>
     <dt>서른 살 넘은 아파트</dt><dd>${r.aptShare30}% · ${fmt(r.apt30)}호</dd>
@@ -164,8 +164,8 @@ document.getElementById("sites")?.addEventListener("click", e => {
   box.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
 });
 
-document.querySelectorAll(".seg").forEach(s => s.addEventListener("click", e => {
-  const b = e.target.closest("button"); if (!b) return;
+document.querySelectorAll(".controls .seg").forEach(s => s.addEventListener("click", e => {
+  const b = e.target.closest("button[data-m]"); if (!b) return;
   metric = b.dataset.m; try { localStorage.setItem("aging-metric", metric); } catch (err) {}
   clearFocus(); render();
 }));
@@ -175,3 +175,32 @@ mq.addEventListener && mq.addEventListener("change", render);
 new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 facts(); if (document.getElementById("sites")) siteList(); render(); table();
+
+/* 3D로 보기: three.js와 3D 스크립트, 경계 데이터는 처음 켤 때만 내려받습니다. */
+(function () {
+  const box = document.getElementById("view-3d"), board = document.querySelector(".board"), v3d = document.getElementById("v3d");
+  if (!box || !v3d) return;
+  const ver = (document.querySelector('script[src*="map2d.js"]').src.split("?v=")[1] || "");
+  let started = false;
+  const load = src => new Promise((ok, no) => { const s = document.createElement("script"); s.src = "/assets/" + src + "?v=" + ver; s.onload = ok; s.onerror = no; document.body.append(s); });
+  async function start() {
+    if (started) return; started = true;
+    v3d.setAttribute("aria-busy", "true");
+    try {
+      await load("vendor/three.min.js"); await load("vendor/OrbitControls.js"); await load("map3d.js");
+      const geo = await (await fetch("/assets/geo3d.json?v=" + ver)).json();
+      window.startMap3D(geo);
+    } catch (e) {
+      document.getElementById("d3-stage").insertAdjacentHTML("beforeend", '<div class="nogl"><p>3D 화면을 불러오지 못했어요. 새로고침하거나 평면 지도로 봐 주세요.</p></div>');
+    }
+    v3d.removeAttribute("aria-busy");
+  }
+  function apply() {
+    const on = box.checked;
+    board.hidden = on; v3d.hidden = !on;
+    if (on) { clearFocus(); start(); }
+    try { history.replaceState(null, "", on ? "#3d" : location.pathname + location.search); } catch (e) {}
+  }
+  box.addEventListener("change", apply);
+  if (location.hash === "#3d" || /[?&]view=3d/.test(location.search)) { box.checked = true; apply(); }
+})();

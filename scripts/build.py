@@ -220,7 +220,7 @@ def ad(slot: str) -> str:
     return ""
 
 
-NAV = [("/", "홈"), ("/map/", "지도"), ("/3d/", "3D"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/methodology/", "방법론"), ("/data/", "데이터")]
+NAV = [("/", "홈"), ("/map/", "지도"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/methodology/", "방법론"), ("/data/", "데이터")]
 
 
 def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css=(), js=(), data=None, geo=None,
@@ -466,7 +466,7 @@ def home_notes() -> str:
 def build_home():
     n10 = tens(SEOUL["share30"])
     opts = "".join(f'<option value="{gu_link(g)}">{esc(g)}</option>' for g in GU)
-    tiles = [("/map/", "지도", "25개 구 집 나이를 색으로"), ("/3d/", "3D", "집 나이를 기둥으로 쌓아 보기"),
+    tiles = [("/map/", "지도", "25개 구 집 나이를 색으로"), ("/map/#3d", "3D 지도", "집 나이를 기둥으로 쌓아 보기"),
              ("/gu/", "자치구", "우리 구 집 나이 자세히"), ("/projects/", "정비사업", "새집으로 바뀌는 중인 동네")]
     tile_html = "".join(f'<a class="tile" href="{h}"><b>{t}</b><span>{d}</span></a>' for h, t, d in tiles)
     body = f"""
@@ -508,22 +508,23 @@ def build_home():
 
 
 def build_map():
-    lines = ["구를 누르면 자세한 숫자가 나와요.", "위 단추로 아파트만, 저층 주택만 골라 볼 수 있어요."] + common_lines()[1:3]
+    lines = ["구를 누르면 자세한 숫자가 나와요.", "‘3D로 보기’를 켜면 집 나이를 기둥으로 쌓아 보여줘요.", "위 단추로 아파트만, 저층 주택만 골라 볼 수 있어요."] + common_lines()[1:3]
     body = tpl("map.html", Y1=Y1, NOTES=home_notes(), AD_SLOT=ad("home"), PROJECTS_ASOF=ym_label(PROJ["asOf"]),
                BUDDY=buddy("search", lines=lines))
     layout("map/", f"서울 주택 노후도 지도 – 25개 자치구 주택·아파트 노후도 ({Y1})",
            f"서울 25개 자치구의 30년 이상 노후 주택 비율을 지도로 봅니다. {Y1}년 서울 전체 {SEOUL['share30']}%, "
            f"아파트 {SEOUL['aptShare30']}%. 아파트와 단독·다세대 주택을 나눠 매년 갱신합니다.",
-           body, active="/map/", css=("map2d.css",), js=("map2d.js",), data=map_payload(), geo=GEO2D)
+           body, active="/map/", css=("map2d.css", "map3d.css"), js=("map2d.js",), data=map_payload(), geo=GEO2D)
 
 
 def build_3d():
-    body = tpl("3d.html", Y1=Y1, BUDDY=buddy("cheer", lines=["끌어서 돌려 보세요!", "판을 뚫고 올라온 구가 기준을 넘는 곳이에요.", "‘남쪽에서’를 누르면 높이를 나란히 비교할 수 있어요."]))
-    layout("3d/", f"서울 노후도 3D – 자치구별 주택 노후도를 입체로 ({Y1})",
-           "서울 25개 자치구를 노후 주택 비율만큼 솟은 3D 기둥으로 보여줍니다. 재개발 노후도 기준 60%와 서울 평균을 반투명 판으로 표시합니다.",
-           body, active="/3d/", css=("map3d.css",), js=("vendor/three.min.js", "vendor/OrbitControls.js", "map3d.js"),
-           data=map_payload(), geo=GEO3D)
-
+    """예전 /3d/ 주소는 지도 탭의 3D 보기로 보냅니다."""
+    body = """
+<header class="page-head"><h1>3D 지도는 지도 탭으로 옮겼어요</h1>
+<p class="lede"><a href="/map/#3d">지도에서 3D로 보기</a>로 이동하고 있어요.</p></header>
+<script>location.replace("/map/#3d");</script>
+"""
+    layout("3d/", f"3D 지도 – {SITE}", "서울 노후도 3D 지도는 지도 탭의 '3D로 보기'로 옮겼습니다.", body, active="/map/", noindex=True)
 
 def stat(k: str, v: str, s: str) -> str:
     return f'<div class="stat"><span class="k">{k}</span><span class="v">{v}</span><span class="s">{s}</span></div>'
@@ -1007,6 +1008,7 @@ def write_static():
     shutil.copytree(SRC / "assets", OUT / "assets", dirs_exist_ok=True)
     (OUT / "CNAME").write_text(CFG["domain"] + "\n", encoding="utf-8")
     (OUT / ".nojekyll").write_text("", encoding="utf-8")
+    (OUT / "assets" / "geo3d.json").write_text(jdump(GEO3D), encoding="utf-8")
     (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {BASE}/sitemap.xml\n", encoding="utf-8")
     sm = "".join(f"<url><loc>{u}</loc><lastmod>{TODAY.isoformat()}</lastmod></url>" for u in SITEMAP)
     (OUT / "sitemap.xml").write_text(

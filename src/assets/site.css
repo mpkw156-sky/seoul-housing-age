@@ -45,6 +45,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-sans); font-size: var(--fs-base); line-height: 1.7;
@@ -327,3 +328,5 @@ article.post section p { margin: 0; color: var(--ink-2); }
   .page-head.with-buddy > .yk { grid-row: 1 / span 2; --yk: 78px; }
   .page-head.with-buddy > .lede, .page-head.with-buddy > p { grid-column: 1 / -1; }
 }
+.chk.view3d { background: var(--soft); border-radius: 999px; padding: 6px 14px 6px 10px; min-height: 40px; }
+.chk.view3d b { font-weight: 500; color: var(--ink); }
