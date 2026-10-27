@@ -21,6 +21,24 @@
     addEventListener("pointermove", function (e) { px = e.clientX; py = e.clientY; if (!queued) { queued = true; requestAnimationFrame(look); } }, { passive: true });
   }
 
+  /* 말풍선이 화면 밖으로 나가지 않게: 좌우는 밀어 넣고, 위가 모자라면 아래로 뒤집습니다. 꼬리는 연식이를 계속 가리킵니다. */
+  var M = 12;
+  function place(say) {
+    // measure from the character, not the bubble, so an in-progress animation can't skew the numbers
+    var host = say.parentElement.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    var w = say.offsetWidth, h = say.offsetHeight, cx = host.left + host.width / 2;
+    var left = cx - w / 2, dx = 0;
+    if (left < M) dx = M - left;
+    else if (left + w > vw - M) dx = vw - M - (left + w);
+    var lim = Math.max(0, w / 2 - 16);       // keep the tail on the bubble
+    dx = Math.max(-lim, Math.min(lim, dx));
+    say.style.setProperty("--dx", dx.toFixed(1) + "px");
+    say.classList.toggle("below", host.top - h + 6 < M);
+  }
+  addEventListener("resize", function () {
+    all.forEach(function (el) { var s = el.querySelector(".yk-say"); if (s && el.classList.contains("talking")) place(s); });
+  });
+
   all.forEach(function (el) {
     var btn = el.querySelector(".yk-btn"), say = el.querySelector(".yk-say");
     if (!btn || !say) return;
@@ -30,6 +48,7 @@
       if (!lines.length) return;
       i = (i + 1) % lines.length;
       say.textContent = lines[i];
+      place(say);
       el.classList.add("talking");
       if (!reduce) { el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop"); }
       clearTimeout(timer);
