@@ -473,8 +473,8 @@ def build_home():
 <section class="home-hero" aria-labelledby="hero-h">
   <div>
     <div class="eyebrow">서울 주택 노후도 · {Y1}년 기준 · 25개 자치구</div>
-    <h1 id="hero-h">서울 주택이<br>늙어가고 있어요<span class="wave">~</span></h1>
-    <p class="lede">서울 집 10채 중 {n10}채는 벌써 서른 살(준공 30년)을 넘겼어요. 5년 전인 {Y0}년보다 {SEOUL['delta']:.1f}%p 늘었죠. 우리 동네 집은 몇 살인지 {MASCOT_NAME}와 함께 알아봐요.</p>
+    <h1 id="hero-h">연식이와 함께<br>서울 주택 나이를 알아보자</h1>
+    <p class="lede">서울 집 10채 중 {n10}채는 벌써 서른 살(준공 30년)을 넘겼어요. 5년 전인 {Y0}년보다 {SEOUL['delta']:.1f}%p 늘었죠. 우리 동네 집은 몇 살인지 지도에서 찾아보세요.</p>
     <div class="hero-cta">
       <a class="btn" href="/map/">지도에서 보기</a>
       <span class="gu-pick"><label class="sr-only" for="gu-select">우리 구 바로 가기</label>
@@ -502,7 +502,7 @@ def build_home():
 """
     jsonld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE, "url": BASE + "/",
               "inLanguage": "ko", "description": CFG["site_tagline"]}
-    layout("", f"{SITE} – 서울 주택이 늙어가고 있어요 (25개 자치구 집 나이, {Y1})",
+    layout("", f"{SITE} – 연식이와 함께 서울 주택 나이를 알아보자 (25개 자치구, {Y1})",
            f"서울 집 10채 중 {n10}채는 서른 살이 넘었어요. 서울 25개 자치구 주택·아파트 노후도를 지도와 3D로 보고, 매일 서울 집 소식을 확인하세요.",
            body, active="/", jsonld=jsonld)
 
