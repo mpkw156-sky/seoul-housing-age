@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-27T12:52+09:00",
+ "updated": "2026-10-28T13:00+09:00",
  "items": [
   {
    "id": "seoul-468919",
@@ -9,6 +9,16 @@
    "dept": "주택실 주거정비과",
    "title": "서울시, 자치구 정비사업 임의지연 막는다… 사업시행자 지정 30일·보완 2회 '업무표준화'",
    "url": "https://www.seoul.go.kr/news/news_report.do#view/468919",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-468991",
+   "date": "2026-10-27",
+   "time": "06:43",
+   "org": "서울특별시",
+   "dept": "주택실 건축기획과",
+   "title": "서울시, 리모델링 2곳 359세대 공급·역세권 2곳 262세대 계획…건축심의 통과",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/468991",
    "src": "seoul"
   },
   {
