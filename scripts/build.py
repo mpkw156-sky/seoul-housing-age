@@ -812,25 +812,52 @@ def md_inline(t: str) -> str:
 
 
 def seoul_old30_svg() -> str:
-    """서울 30년 이상 주택 비율 추이. 휴대폰 폭에서도 글자가 읽히도록 좁은 viewBox(360)로 그리고 화면 폭에 맞춥니다."""
+    """서울 30년 이상 주택 비율 추이.
+    선·눈금은 늘어나는 SVG(non-scaling stroke)로, 글자와 점은 HTML로 얹어서 어떤 화면 폭에서도
+    차트가 상자 폭을 꽉 채우고 글자 크기는 그대로(13~14px) 유지됩니다."""
     vals = [raw_share30(seoul_rec(y)) for y in YEARS]
-    W, Hh, ml, mr, mt, mb = 360, 214, 38, 16, 30, 26
     top = nice_max(max(vals) * 1.1, 10)
-    X = lambda k: ml + k * (W - ml - mr) / (len(YEARS) - 1)
-    Y = lambda v: mt + (1 - v / top) * (Hh - mt - mb)
-    grid = "".join(f'<line x1="{ml}" x2="{W - mr}" y1="{Y(v):.1f}" y2="{Y(v):.1f}"></line>' for v in range(0, int(top) + 1, 10))
-    yt = "".join(f'<text x="{ml - 6}" y="{Y(v) + 4:.1f}" text-anchor="end">{v}%</text>' for v in range(0, int(top) + 1, 10))
-    xt = "".join(f'<text x="{X(k):.1f}" y="{Hh - 6}" text-anchor="{"start" if k == 0 else "end" if k == len(YEARS) - 1 else "middle"}">{y}</text>'
-                 for k, y in enumerate(YEARS) if k in (0, len(YEARS) // 2, len(YEARS) - 1))
-    pts = " ".join(f"{X(k):.1f},{Y(v):.1f}" for k, v in enumerate(vals))
-    ends = (0, len(vals) - 1)
-    dots = "".join(f'<circle class="dot-gu" cx="{X(k):.1f}" cy="{Y(v):.1f}" r="{4.5 if k in ends else 3}"><title>{YEARS[k]}년 {v:.1f}%</title></circle>' for k, v in enumerate(vals))
-    lab = "".join(f'<text class="val" x="{X(k):.1f}" y="{Y(vals[k]) - 11:.1f}" text-anchor="{a}">{vals[k]:.1f}%</text>' for k, a in ((0, "start"), (len(vals) - 1, "end")))
-    return (f'<figure class="card chart col-chart"><figcaption><b>서른 살 넘은 서울 집 비율, {YEARS[0]}년 {vals[0]:.1f}% → {YEARS[-1]}년 {vals[-1]:.1f}%</b>'
+    n = len(YEARS) - 1
+    X = lambda k: k * 100 / n
+    Y = lambda v: (1 - v / top) * 100
+    ticks = list(range(0, int(top) + 1, 10))
+    grid = "".join(f'<line x1="0" x2="100" y1="{Y(v):.2f}" y2="{Y(v):.2f}"></line>' for v in ticks)
+    pts = " ".join(f"{X(k):.2f},{Y(v):.2f}" for k, v in enumerate(vals))
+    yl = "".join(f'<span style="top:{Y(v):.2f}%">{v}%</span>' for v in ticks)
+    xs = (0, n // 2, n)
+    xl = "".join(f'<span class="{"s" if k == 0 else "e" if k == n else ""}" style="left:{X(k):.2f}%">{YEARS[k]}</span>' for k in xs)
+    ends = (0, n)
+    dots = "".join(f'<i class="lc-dot{" big" if k in ends else ""}" style="left:{X(k):.2f}%;top:{Y(v):.2f}%" title="{YEARS[k]}년 {v:.1f}%"></i>'
+                   for k, v in enumerate(vals))
+    lab = "".join(f'<b class="lc-val {c}" style="left:{X(k):.2f}%;top:{Y(vals[k]):.2f}%">{vals[k]:.1f}%</b>' for k, c in ((0, "s"), (n, "e")))
+    aria = f"서울 30년 이상 주택 비율 {YEARS[0]}년 {vals[0]:.1f}%에서 {YEARS[-1]}년 {vals[-1]:.1f}%로"
+    return (f'<figure class="card chart col-chart"><figcaption><b>서른 살 넘은 서울 집 비율, <span class="nw">{YEARS[0]}년 {vals[0]:.1f}% → {YEARS[-1]}년 {vals[-1]:.1f}%</span></b>'
             f'<span>준공 30년 이상 주택 ÷ 전체 주택 · 서울 25개 자치구 합계</span></figcaption>'
-            f'<svg viewBox="0 0 {W} {Hh}" role="img" aria-label="서울 30년 이상 주택 비율 {YEARS[0]}년 {vals[0]:.1f}%에서 {YEARS[-1]}년 {vals[-1]:.1f}%로">'
-            f'<g class="grid">{grid}</g><g class="axis">{yt}{xt}</g><polyline class="line-gu" points="{pts}"></polyline>{dots}{lab}</svg>'
+            f'<div class="lc" role="img" aria-label="{aria}"><div class="lc-y" aria-hidden="true">{yl}</div>'
+            f'<div class="lc-plot" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'
+            f'<g class="grid">{grid}</g><polyline class="line-gu" points="{pts}"></polyline></svg>{dots}{lab}</div>'
+            f'<div class="lc-x" aria-hidden="true">{xl}</div></div>'
             f'<p class="news-note">자료: 국가데이터처 주택총조사(서울 데이터 허브)</p></figure>')
+
+
+def two_lines(t: str) -> str:
+    """표 머리글을 띄어쓰기 기준으로 길이가 비슷한 두 줄로 나눕니다(한 단어면 한 줄)."""
+    w = t.split(" ")
+    if len(w) < 2 or len(t) <= 4:
+        return f"<span>{md_inline(t)}</span>"
+    best = min(range(1, len(w)), key=lambda i: max(len(" ".join(w[:i])), len(" ".join(w[i:]))))
+    return f'<span>{md_inline(" ".join(w[:best]))}</span><span>{md_inline(" ".join(w[best:]))}</span>'
+
+
+RANK_RE = re.compile(r"(.+?)\s*\((\d+위)\)")
+
+
+def table_cell(t: str, rank_col: bool = False) -> str:
+    """순위가 붙은 칸은 숫자와 순위를 나눠, 같은 열의 숫자가 세로로 줄을 맞추게 합니다."""
+    m = RANK_RE.fullmatch(t)
+    if m:
+        return f'{md_inline(m.group(1))}<small class="rank">{m.group(2)}</small>'
+    return md_inline(t) + ('<small class="rank" aria-hidden="true"></small>' if rank_col else "")
 
 
 CHARTS = {"seoul-old30": seoul_old30_svg}
@@ -859,9 +886,11 @@ def md_blocks(md: str) -> str:
         if all(l.strip().startswith("|") for l in lines) and len(lines) >= 2:
             rows = [[c.strip() for c in l.strip().strip("|").split("|")] for l in lines]
             head, body = rows[0], [r for r in rows[2:]]
-            th = "".join(f"<th>{md_inline(c)}</th>" for c in head)
-            tb = "".join("<tr>" + "".join(f"<td>{md_inline(c)}</td>" for c in r) + "</tr>" for r in body)
-            out.append(f'<p class="swipe-hint" aria-hidden="true">표는 옆으로 밀어서 볼 수 있어요 →</p><div class="tablewrap card"><table class="data col-table"><thead><tr>{th}</tr></thead><tbody>{tb}</tbody></table></div>'); continue
+            rank_cols = {i for i in range(len(head)) if any(i < len(r) and RANK_RE.fullmatch(r[i]) for r in body)}
+            th = "".join(f'<th scope="col">{two_lines(c)}</th>' for c in head)
+            tb = "".join(("<tr class=\"seoul\">" if r[0].startswith("서울") else "<tr>")
+                         + "".join(f"<td>{table_cell(c, i in rank_cols)}</td>" for i, c in enumerate(r)) + "</tr>" for r in body)
+            out.append(f'<p class="swipe-hint" aria-hidden="true">표는 옆으로 밀어서 볼 수 있어요 →</p><div class="tablewrap card col-tablewrap"><table class="data col-table"><thead><tr>{th}</tr></thead><tbody>{tb}</tbody></table></div>'); continue
         if all(l.strip().startswith(">") for l in lines):
             out.append("<blockquote>" + md_inline(" ".join(l.strip()[1:].strip() for l in lines)) + "</blockquote>"); continue
         out.append(f"<p>{md_inline(' '.join(l.strip() for l in lines))}</p>")
