@@ -220,7 +220,7 @@ def ad(slot: str) -> str:
     return ""
 
 
-NAV = [("/", "홈"), ("/map/", "지도"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/data/", "데이터 안내")]
+NAV = [("/", "홈"), ("/map/", "지도"), ("/gu/", "자치구"), ("/projects/", "정비사업"), ("/news/", "집 소식"), ("/reads/", "읽을거리"), ("/data/", "데이터 안내")]
 
 
 def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css=(), js=(), data=None, geo=None,
@@ -293,7 +293,7 @@ def layout(path: str, title: str, desc: str, body: str, *, active: str = "", css
 <footer class="site-foot gutter"><div class="inner">
 <p>자료: 국가데이터처 주택총조사 (서울 데이터 허브 「서울시 노후기간별 주택현황 통계」, 「서울시 건축연도별 주택현황 통계」, 공공누리 제1유형), {Y1}년 기준. 정비사업 현황은 언론 보도·서울시 발표 기준({ym_label(PROJ['asOf'])})입니다.</p>
 <p>이 사이트는 공공 통계로 집 나이를 보여주는 정보 서비스예요. 투자 권유나 자문이 아니에요. 노후도는 주택 호수로 계산한 근사치라 법정 노후도와 다를 수 있어요.</p>
-<div class="links"><a href="/news/">집 소식</a><a href="/about/">소개</a><a href="/data/">데이터 안내</a><a href="/privacy/">개인정보처리방침</a></div>
+<div class="links"><a href="/news/">집 소식</a><a href="/reads/">읽을거리</a><a href="/about/">소개</a><a href="/data/">데이터 안내</a><a href="/privacy/">개인정보처리방침</a></div>
 <p>© {TODAY.year} {esc(CFG.get('operator', SITE))}{contact} · 마지막 빌드 {TODAY.isoformat()}</p>
 </div></footer>
 {datas}
@@ -493,6 +493,7 @@ def build_home():
   </div>
 </section>
 {home_news()}
+{home_reads()}
 {ad("home")}
 <section class="go" aria-labelledby="go-h">
   <h2 id="go-h" class="sec">둘러보기</h2>
@@ -778,6 +779,151 @@ def build_posts():
         layout(post_url(pst).strip("/") + "/", f"{pst['title']} – {SITE}", pst["summary"][0], body, active="/news/", jsonld=ld)
 
 
+# ---------------------------------------------------------------- 읽을거리 (운영자 칼럼·해설, data/columns/*.md)
+def read_column(f: Path) -> dict:
+    raw = f.read_text(encoding="utf-8")
+    meta, body = {}, raw
+    if raw.startswith("---"):
+        head, body = raw[3:].split("\n---", 1)
+        for line in head.strip().splitlines():
+            k, _, v = line.partition(":")
+            meta[k.strip()] = v.strip()
+    meta["tags"] = [t.strip() for t in meta.get("tags", "").split(",") if t.strip()]
+    meta["gu"] = [g.strip() for g in meta.get("gu", "").split(",") if g.strip() in BY]
+    meta["slug"] = f.stem
+    meta["body"] = body.strip()
+    return meta
+
+
+COLUMNS = sorted((read_column(f) for f in (DATA / "columns").glob("*.md")), key=lambda c: (c["date"], c["slug"]), reverse=True) \
+    if (DATA / "columns").exists() else []
+
+
+def md_inline(t: str) -> str:
+    t = esc(t, quote=False)
+    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+    def link(m):
+        href = html.unescape(m.group(2))
+        if not re.match(r"^(https?://|/)", href):
+            return m.group(1)
+        ext = href.startswith("http")
+        return f'<a href="{esc(href)}"' + (' target="_blank" rel="noopener"' if ext else "") + f">{m.group(1)}</a>"
+    return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", link, t)
+
+
+def seoul_old30_svg() -> str:
+    """서울 30년 이상 주택 비율 추이. 휴대폰 폭에서도 글자가 읽히도록 좁은 viewBox(360)로 그리고 화면 폭에 맞춥니다."""
+    vals = [raw_share30(seoul_rec(y)) for y in YEARS]
+    W, Hh, ml, mr, mt, mb = 360, 214, 38, 16, 30, 26
+    top = nice_max(max(vals) * 1.1, 10)
+    X = lambda k: ml + k * (W - ml - mr) / (len(YEARS) - 1)
+    Y = lambda v: mt + (1 - v / top) * (Hh - mt - mb)
+    grid = "".join(f'<line x1="{ml}" x2="{W - mr}" y1="{Y(v):.1f}" y2="{Y(v):.1f}"></line>' for v in range(0, int(top) + 1, 10))
+    yt = "".join(f'<text x="{ml - 6}" y="{Y(v) + 4:.1f}" text-anchor="end">{v}%</text>' for v in range(0, int(top) + 1, 10))
+    xt = "".join(f'<text x="{X(k):.1f}" y="{Hh - 6}" text-anchor="{"start" if k == 0 else "end" if k == len(YEARS) - 1 else "middle"}">{y}</text>'
+                 for k, y in enumerate(YEARS) if k in (0, len(YEARS) // 2, len(YEARS) - 1))
+    pts = " ".join(f"{X(k):.1f},{Y(v):.1f}" for k, v in enumerate(vals))
+    ends = (0, len(vals) - 1)
+    dots = "".join(f'<circle class="dot-gu" cx="{X(k):.1f}" cy="{Y(v):.1f}" r="{4.5 if k in ends else 3}"><title>{YEARS[k]}년 {v:.1f}%</title></circle>' for k, v in enumerate(vals))
+    lab = "".join(f'<text class="val" x="{X(k):.1f}" y="{Y(vals[k]) - 11:.1f}" text-anchor="{a}">{vals[k]:.1f}%</text>' for k, a in ((0, "start"), (len(vals) - 1, "end")))
+    return (f'<figure class="card chart col-chart"><figcaption><b>서른 살 넘은 서울 집 비율, {YEARS[0]}년 {vals[0]:.1f}% → {YEARS[-1]}년 {vals[-1]:.1f}%</b>'
+            f'<span>준공 30년 이상 주택 ÷ 전체 주택 · 서울 25개 자치구 합계</span></figcaption>'
+            f'<svg viewBox="0 0 {W} {Hh}" role="img" aria-label="서울 30년 이상 주택 비율 {YEARS[0]}년 {vals[0]:.1f}%에서 {YEARS[-1]}년 {vals[-1]:.1f}%로">'
+            f'<g class="grid">{grid}</g><g class="axis">{yt}{xt}</g><polyline class="line-gu" points="{pts}"></polyline>{dots}{lab}</svg>'
+            f'<p class="news-note">자료: 국가데이터처 주택총조사(서울 데이터 허브)</p></figure>')
+
+
+CHARTS = {"seoul-old30": seoul_old30_svg}
+
+
+def md_blocks(md: str) -> str:
+    out, blocks = [], re.split(r"\n\s*\n", md.strip())
+    for b in blocks:
+        lines = b.strip().splitlines()
+        first = lines[0].strip()
+        m = re.fullmatch(r"\{\{chart:([a-z0-9-]+)\}\}", first)
+        if m and m.group(1) in CHARTS:
+            out.append(CHARTS[m.group(1)]()); continue
+        m = re.fullmatch(r"\{\{yeonsik:(.+)\}\}", " ".join(l.strip() for l in lines))
+        if m:
+            out.append(f'<aside class="yk-note" aria-label="연식이의 한마디">{buddy("hello", size="64px")}<div><b>연식이의 한마디</b><p>{md_inline(m.group(1).strip())}</p></div></aside>')
+            continue
+        if first.startswith("## "):
+            out.append(f"<h2>{md_inline(first[3:].strip())}</h2>")
+            rest = "\n".join(lines[1:]).strip()
+            if rest:
+                out.append(md_blocks(rest))
+            continue
+        if all(l.strip().startswith("- ") for l in lines):
+            out.append("<ul>" + "".join(f"<li>{md_inline(l.strip()[2:])}</li>" for l in lines) + "</ul>"); continue
+        if all(l.strip().startswith("|") for l in lines) and len(lines) >= 2:
+            rows = [[c.strip() for c in l.strip().strip("|").split("|")] for l in lines]
+            head, body = rows[0], [r for r in rows[2:]]
+            th = "".join(f"<th>{md_inline(c)}</th>" for c in head)
+            tb = "".join("<tr>" + "".join(f"<td>{md_inline(c)}</td>" for c in r) + "</tr>" for r in body)
+            out.append(f'<p class="swipe-hint" aria-hidden="true">표는 옆으로 밀어서 볼 수 있어요 →</p><div class="tablewrap card"><table class="data col-table"><thead><tr>{th}</tr></thead><tbody>{tb}</tbody></table></div>'); continue
+        if all(l.strip().startswith(">") for l in lines):
+            out.append("<blockquote>" + md_inline(" ".join(l.strip()[1:].strip() for l in lines)) + "</blockquote>"); continue
+        out.append(f"<p>{md_inline(' '.join(l.strip() for l in lines))}</p>")
+    return "\n".join(out)
+
+
+def column_url(c: dict) -> str:
+    return f"/reads/{c['slug']}/"
+
+
+def column_card(c: dict) -> str:
+    tags = "".join(f'<span class="tag">{esc(t)}</span>' for t in c["tags"])
+    return (f'<a class="post-card" href="{column_url(c)}"><span class="tags">{tags}</span><b>{esc(c["title"])}</b>'
+            f'<p>{esc(c["summary"])}</p><span class="meta">{c["date"].replace("-", ".")} · 운영자 칼럼</span></a>')
+
+
+def build_columns():
+    for c in COLUMNS:
+        tags = "".join(f'<span class="tag">{esc(t)}</span>' for t in c["tags"])
+        gus = " · ".join(f'<a href="{gu_link(g)}">{esc(g)}</a>' for g in c["gu"])
+        more = "".join(f'<a href="{gu_link(g)}">{esc(g)}<span>{BY[g]["share30"]}%</span></a>' for g in c["gu"])
+        body = f"""
+<nav class="crumbs" aria-label="현재 위치"><a href="/">홈</a> › <a href="/reads/">읽을거리</a> › {esc(c['title'])}</nav>
+<article class="post column">
+  <header>
+    <span class="tags">{tags}</span>
+    <h1>{esc(c['title'])}</h1>
+    <div class="meta"><span>{c['date'].replace('-', '.')}</span><span>글 · {esc(CFG.get('operator', SITE))}</span></div>
+    <p class="lede">{esc(c['summary'])}</p>
+  </header>
+  {md_blocks(c['body'])}
+  <section aria-label="함께 보기"><h2>함께 보기</h2><div class="gu-links">{more}<a href="/map/">지도로 보기<span>→</span></a></div></section>
+  <footer class="post-source">
+    <p><b>통계</b> · 국가데이터처 주택총조사 — 서울 데이터 허브 「<a href="https://data.seoul.go.kr/bsp/wgs/dataView/data300View/474.do" target="_blank" rel="noopener">서울시 노후기간별 주택현황 통계</a>」, 「<a href="https://data.seoul.go.kr/bsp/wgs/dataView/data300View/460.do" target="_blank" rel="noopener">서울시 건축연도별 주택현황 통계</a>」(공공누리 제1유형), {YEARS[0]}~{Y1}년. 계산 방법은 <a href="/data/#method">데이터 안내</a>에 있어요.</p>
+    <p>이 글은 통계를 보고 쓴 운영자의 개인적인 의견이에요. 특정 지역의 매수·매도를 권하는 글이 아니며, 투자 권유나 자문이 아니에요.</p>
+  </footer>
+</article>
+<nav class="pager" aria-label="다른 글"><a href="/reads/">← 읽을거리 목록</a></nav>
+"""
+        ld = {"@context": "https://schema.org", "@type": "BlogPosting", "headline": c["title"], "datePublished": c["date"],
+              "inLanguage": "ko", "author": {"@type": "Person", "name": CFG.get("operator", SITE)}, "mainEntityOfPage": f"{BASE}{column_url(c)}"}
+        layout(column_url(c).strip("/") + "/", f"{c['title']} – {SITE}", c["summary"], body, active="/reads/", jsonld=ld)
+    cards = "".join(column_card(c) for c in COLUMNS) or '<p class="lede">첫 글을 준비하고 있어요.</p>'
+    body = f"""
+<header class="page-head with-buddy">
+  <div class="eyebrow">읽을거리 · 운영자 칼럼과 통계 해설</div>
+  <h1>숫자를 천천히 읽어 봐요</h1>
+  {buddy("news", lines=["숫자 뒤의 이야기를 모아 두는 곳이에요.", "글마다 통계 출처가 붙어 있어요."])}
+  <p class="lede">사이트의 통계를 보고 운영자가 직접 쓴 생각과 해설을 모았어요. 숫자는 모두 공공 통계에서 왔고, 의견은 의견이라고 밝혀 둘게요.</p>
+</header>
+<div class="post-list">{cards}</div>
+"""
+    layout("reads/", f"읽을거리 – 서울 집 나이 통계 해설과 칼럼 · {SITE}", "서울 주택 노후도 통계를 바탕으로 운영자가 직접 쓴 칼럼과 해설 모음.", body, active="/reads/")
+
+
+def home_reads() -> str:
+    if not COLUMNS:
+        return ""
+    return (f'<section class="news-home" aria-labelledby="reads-h"><div class="sec-head"><h2 id="reads-h" class="sec">읽을거리</h2>'
+            f'<a href="/reads/">글 더 보기 →</a></div><div class="post-list">{"".join(column_card(c) for c in COLUMNS[:3])}</div></section>')
+
+
 def build_news():
     days: dict[str, list] = {}
     for it in NEWS["items"]:
@@ -1038,6 +1184,7 @@ def main():
     build_projects()
     build_posts()
     build_news()
+    build_columns()
     build_methodology()
     build_data_page()
     build_about()

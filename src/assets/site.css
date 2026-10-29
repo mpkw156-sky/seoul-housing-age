@@ -338,3 +338,20 @@ article.post section p { margin: 0; color: var(--ink-2); }
 .toc a:hover { border-color: var(--accent); color: var(--accent); }
 .data-sec { display: grid; gap: 12px; scroll-margin-top: 16px; }
 .data-sec .sec-lede { margin: 0; color: var(--ink-2); max-width: 42em; }
+/* 읽을거리 (column) */
+article.column > h2 { margin-top: 10px; }
+article.column > p { margin: 0; color: var(--ink-2); text-wrap: pretty; }
+article.column > p b { color: var(--ink); }
+article.column > ul { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; color: var(--ink-2); }
+article.column .lede { margin-top: 4px; }
+table.data.col-table th, table.data.col-table td { white-space: normal; min-width: 0; padding: 8px 8px; word-break: keep-all; }
+table.data.col-table th:first-child, table.data.col-table td:first-child { white-space: nowrap; }
+.col-chart { margin: 0; display: grid; gap: 8px; }
+.col-chart figcaption { display: grid; gap: 2px; }
+.col-chart figcaption span { font-size: var(--fs-xs); color: var(--ink-3); }
+.col-chart { max-width: 640px; }
+.col-chart svg { min-width: 0; width: 100%; max-width: 440px; }
+.col-chart .axis text { font-size: 13px; }
+.col-chart .val { font-size: 14px; }
+.swipe-hint { display: none; margin: 0 0 -6px; font-size: var(--fs-xs); color: var(--ink-3); text-align: right; }
+@media (max-width: 760px) { .swipe-hint { display: block; } }
