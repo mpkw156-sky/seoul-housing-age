@@ -1,6 +1,56 @@
 {
- "updated": "2026-10-28T13:00+09:00",
+ "updated": "2026-10-29T13:02+09:00",
  "items": [
+  {
+   "id": "seoul-469123",
+   "date": "2026-10-29",
+   "time": "10:05",
+   "org": "서울특별시",
+   "dept": "도시공간본부 신속통합기획과",
+   "title": "멈춰 섰던 흑석재촉지구 내 해제지역, 고구동산 품은 숲세권 주거단지로... 서울시, 흑석동 204-104 일대 신속통합기획 확정",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/469123",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-469120",
+   "date": "2026-10-29",
+   "time": "10:04",
+   "org": "서울특별시",
+   "dept": "도시공간본부 도시재창조과",
+   "title": "서울시, 세운재정비촉진계획 변경(안) 주민공람 실시",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/469120",
+   "src": "seoul"
+  },
+  {
+   "id": "molit-95092535",
+   "date": "2026-10-29",
+   "time": "",
+   "org": "국토교통부",
+   "dept": "주택토지",
+   "title": "전국 주택 직거래 및 서울·경기 아파트 거래 기획조사 결과···위법의심거래 678건 적발",
+   "url": "https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?lcmspage=1&id=95092535",
+   "src": "molit"
+  },
+  {
+   "id": "seoul-469082",
+   "date": "2026-10-28",
+   "time": "06:07",
+   "org": "서울특별시",
+   "dept": "기획조정실 예산담당관",
+   "title": "서울시, 채무 증가없이 55조 7,445억 편성… 청년 미래·주거 안정에 집중",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/469082",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-469078",
+   "date": "2026-10-28",
+   "time": "06:04",
+   "org": "서울특별시",
+   "dept": "복지실 자활지원과",
+   "title": "서울시-산림복지진흥원-한국타이어나눔재단 힘을 모아 주거취약계층 구직·취업으로 지친 마음 숲에서 돌본다",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/469078",
+   "src": "seoul"
+  },
   {
    "id": "seoul-468919",
    "date": "2026-10-27",
