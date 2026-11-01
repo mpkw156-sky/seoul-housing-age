@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-30T19:58+09:00",
+ "updated": "2026-11-01T13:07+09:00",
  "items": [
   {
    "id": "seoul-469292",
@@ -9,6 +9,16 @@
    "dept": "주택실 주택정책과",
    "title": "서울시, \"정비사업 용적률 상향, 이미 건의한 사안… 정부가 신속히 법 개정 나서야\"",
    "url": "https://www.seoul.go.kr/news/news_report.do#view/469292",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-469275",
+   "date": "2026-10-30",
+   "time": "05:43",
+   "org": "서울특별시",
+   "dept": "균형발전본부 도시정비과",
+   "title": "서울 남쪽 관문 ＇석수역 중앙철재종합상가＇, 주거·상업 복합거점으로 재탄생",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/469275",
    "src": "seoul"
   },
   {
