@@ -1,6 +1,46 @@
 {
- "updated": "2026-11-10T13:08+09:00",
+ "updated": "2026-11-11T13:14+09:00",
  "items": [
+  {
+   "id": "seoul-470114",
+   "date": "2026-11-11",
+   "time": "09:47",
+   "org": "서울특별시",
+   "dept": "도시공간본부 신속통합기획과",
+   "title": "서울시, 삼선동1가 277 일대 신속통합기획 확정… 최고 18층·870세대 내외",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470114",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-470107",
+   "date": "2026-11-11",
+   "time": "09:44",
+   "org": "서울특별시",
+   "dept": "주택실 건축기획과",
+   "title": "서울시, 망우동 상생주택·아파트 리모델링으로 392세대 공급…건축심의 통과",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470107",
+   "src": "seoul"
+  },
+  {
+   "id": "molit-95092581",
+   "date": "2026-11-11",
+   "time": "",
+   "org": "국토교통부",
+   "dept": "주택토지",
+   "title": "「제11회 부동산산업의 날」 “국민 신뢰와 산업 혁신 다짐”",
+   "url": "https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?lcmspage=1&id=95092581",
+   "src": "molit"
+  },
+  {
+   "id": "seoul-470059",
+   "date": "2026-11-10",
+   "time": "06:02",
+   "org": "서울특별시",
+   "dept": "주택실 공공주택과",
+   "title": "제5차 공공주택통합심의위원회 개최결과",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470059",
+   "src": "seoul"
+  },
   {
    "id": "molit-95092578",
    "date": "2026-11-10",
