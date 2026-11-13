@@ -1,6 +1,36 @@
 {
- "updated": "2026-11-12T20:17+09:00",
+ "updated": "2026-11-13T13:13+09:00",
  "items": [
+  {
+   "id": "seoul-470318",
+   "date": "2026-11-13",
+   "time": "10:13",
+   "org": "서울특별시",
+   "dept": "주택실 주거정비과",
+   "title": "서울시, '재개발 신통기획' 후보지 6개구 6곳 추가 선정…주거환경 개선 속도",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470318",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-470317",
+   "date": "2026-11-13",
+   "time": "10:12",
+   "org": "서울특별시",
+   "dept": "주택실 모아주택과",
+   "title": "서울시, 양천·중랑 '모아주택' 6곳 2,741세대 공급 속도… 2028년 착공",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470317",
+   "src": "seoul"
+  },
+  {
+   "id": "molit-95092595",
+   "date": "2026-11-13",
+   "time": "",
+   "org": "국토교통부",
+   "dept": "주택토지",
+   "title": "서울 가격상승폭 둔화·매물 증가…수도권 내년 1분기까지 4만 호 이상 입주",
+   "url": "https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?lcmspage=1&id=95092595",
+   "src": "molit"
+  },
   {
    "id": "seoul-470225",
    "date": "2026-11-12",
