@@ -383,3 +383,58 @@ table.data.col-table .rank { display: inline-block; min-width: 2.6em; margin-lef
 @media (min-width: 900px) { .lc { grid-template-rows: 240px auto; } }
 .swipe-hint { display: none; margin: 0 0 -6px; font-size: var(--fs-xs); color: var(--ink-3); text-align: right; }
 @media (max-width: 760px) { .swipe-hint { display: block; } }
+
+/* ── 정비사업 페이지: 재건축·재개발 한눈에 ── */
+.guide { display: grid; gap: 12px; scroll-margin-top: 16px; }
+.guide h3 { margin-top: 12px; scroll-margin-top: 16px; }
+.guide .sec-lede, .guide .g-lede { margin: 0; color: var(--ink-2); text-wrap: pretty; }
+.guide .g-foot { margin: 0; font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.6; }
+.cmp-k { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
+.cmp-k svg { width: 12px; height: 12px; flex: none; }
+.cmp { padding: 2px 16px; display: grid; }
+.cmp-row { display: grid; grid-template-columns: 10em minmax(0, 1fr) minmax(0, 1fr); gap: 6px 20px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.cmp-row:last-child { border-bottom: 0; }
+.cmp-row h4 { margin: 0; font-size: var(--fs-sm); font-weight: 600; line-height: 1.6; color: var(--ink); word-break: keep-all; }
+.cmp-row p { margin: 0; font-size: var(--fs-sm); line-height: 1.6; color: var(--ink-2); word-break: keep-all; }
+.cmp-row p b { color: var(--ink); }
+.cmp-row p small { display: block; margin-top: 4px; font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.5; }
+.cmp-row .rb, .cmp-row .rd { border-left: 3px solid var(--mk-rebuild); padding-left: 10px; }
+.cmp-row .rd { border-left-color: var(--mk-redev); }
+.cmp-head { padding: 12px 0 10px; }
+@media (max-width: 640px) {
+  .cmp { padding: 2px 14px; }
+  .cmp-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; }
+  .cmp-row h4 { grid-column: 1 / -1; }
+  .cmp-head > span:first-child { display: none; }
+}
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+@media (max-width: 900px) { .steps { grid-template-columns: minmax(0, 1fr); } }
+.phase-g { background: var(--surface); border: 1px solid var(--line); border-radius: var(--rad); padding: 14px 16px 2px; }
+.phase { margin: 0 0 12px; font-size: var(--fs-xs); font-weight: 600; color: var(--accent); letter-spacing: .02em; }
+.step-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.step { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding-bottom: 14px; }
+.step::before { content: ""; position: absolute; left: 14px; top: 34px; bottom: 4px; width: 2px; background: var(--line); }
+.step:last-child::before { display: none; }
+.step .no { width: 30px; height: 30px; border-radius: 50%; background: var(--soft); color: var(--accent); display: grid; place-items: center; font: 600 14px/1 var(--f-mono); }
+.step b { display: block; font-size: var(--fs-base); line-height: 1.45; color: var(--ink); padding-top: 3px; word-break: keep-all; }
+.step .who { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.5; }
+.step p { margin: 6px 0 0; font-size: var(--fs-sm); line-height: 1.6; color: var(--ink-2); word-break: keep-all; }
+.step-note { display: block; margin-top: 8px; padding: 7px 10px; border-radius: 8px; background: var(--soft); font-size: var(--fs-xs); line-height: 1.55; color: var(--ink-2); word-break: keep-all; }
+.req-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+@media (max-width: 760px) { .req-grid { grid-template-columns: minmax(0, 1fr); } }
+.req { padding: 16px; }
+.req h4 { margin-bottom: 10px; font-size: var(--fs-base); }
+.req ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.req li { border-left: 3px solid var(--line); padding-left: 10px; }
+.req li b { display: block; font-size: var(--fs-sm); line-height: 1.55; color: var(--ink); word-break: keep-all; }
+.req li span { display: block; margin-top: 2px; font-size: var(--fs-sm); line-height: 1.6; color: var(--ink-2); word-break: keep-all; }
+.guide .yk-note { padding: 16px; }
+.guide .yk-note p b:not(:first-child) { display: inline; margin: 0; font-family: inherit; font-size: inherit; font-weight: 600; }
+.g-src { font-size: var(--fs-sm); color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 12px; }
+.g-src summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-weight: 600; color: var(--ink); }
+.g-src ul { margin: 6px 0 8px; padding-left: 1.2em; display: grid; gap: 6px; }
+.g-src p { margin: 0 0 6px; color: var(--ink-3); font-size: var(--fs-xs); line-height: 1.6; }
+.now-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; scroll-margin-top: 16px; margin-top: 8px; padding-top: 20px; border-top: 1px solid var(--line); }
+.step-note svg { width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+.req-tag { display: inline-block; margin-right: 6px; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--on-accent, #fff); font-style: normal; font-size: var(--fs-xs); font-weight: 600; line-height: 1.6; vertical-align: 1px; }
+.req-tag.opt { background: var(--soft); color: var(--accent); }
