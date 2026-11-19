@@ -1,6 +1,26 @@
 {
- "updated": "2026-11-18T13:14+09:00",
+ "updated": "2026-11-19T13:17+09:00",
  "items": [
+  {
+   "id": "seoul-470675",
+   "date": "2026-11-19",
+   "time": "10:13",
+   "org": "서울특별시",
+   "dept": "주택실 부동산정책개발센터",
+   "title": "서울 아파트 매매 실거래가격 상승세 지속...전세가격 상승폭 확대",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470675",
+   "src": "seoul"
+  },
+  {
+   "id": "molit-95092619",
+   "date": "2026-11-19",
+   "time": "",
+   "org": "국토교통부",
+   "dept": "주택토지",
+   "title": "더 나은 주거환경, 더 든든한 주거안정 “최저주거기준 높이고 공공임대 선택 넓힌다”",
+   "url": "https://www.molit.go.kr/USR/NEWS/m_71/dtl.jsp?lcmspage=1&id=95092619",
+   "src": "molit"
+  },
   {
    "id": "seoul-470585",
    "date": "2026-11-18",
