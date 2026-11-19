@@ -660,10 +660,14 @@ RB, RD, MO = "rebuild", "redev", "moa"
 GT = {RB: "재건축", RD: "재개발", MO: "모아타운"}
 
 # 어떤 동네에 어떤 사업이 맞는지 (전체 흐름의 출발점)
-GUIDE_PICK = [
-    (RB, "낡은 아파트 단지", "도로·공원은 괜찮은데 아파트가 낡았어요."),
-    (RD, "기반시설이 부족한 넓은 주택가", "길이 좁고 주차·공원이 부족한 동네를 통째로 바꿔요."),
-    (MO, "다세대·다가구가 모인 저층 주택가", "10만㎡ 미만 동네를 블록 단위로 나눠 차례로 새로 지어요."),
+GUIDE_PICK = [  # (사업, 어떤 동네, 무엇을 하나, 근거 법)
+    (RB, "낡은 아파트 단지",
+     "도로·공원 같은 기반시설은 괜찮은데 건물이 낡은 아파트 단지를 새로 지어요.", "도시정비법"),
+    (RD, "기반시설이 부족한 넓은 주택가",
+     "길이 좁고 기반시설이 부족한 낡은 주택가를 도로·공원까지 함께 새로 만들어요.", "도시정비법"),
+    (MO, "다세대·다가구가 모인 저층 주택가",
+     "10만㎡ 미만 동네를 블록 단위 '모아주택' 여러 개로 나눠 새로 짓고, 지하주차장·공원은 동네 전체로 함께 계획해요. "
+     "모아주택은 가로주택정비 같은 소규모 정비 방식으로 조합을 세워 진행해요.", "소규모주택정비법"),
 ]
 
 # 전체 흐름: 단계 × 사업
@@ -676,14 +680,6 @@ GUIDE_FLOW = {
 GUIDE_TIME = {RB: "보통 10년 이상", RD: "보통 10년 이상", MO: "대상지 선정 → 착공 약 6년 (모아통합기획은 4.5년 목표)"}
 
 GUIDE_CMP = [  # (항목, 재건축, 재개발, 모아타운)
-    ("무엇을 바꾸나요?",
-     "도로·공원 같은 기반시설은 괜찮은데 건물이 낡은 <b>아파트 단지</b>를 새로 지어요.",
-     "길이 좁고 기반시설이 부족한 <b>낡은 주택가</b>를 도로·공원까지 함께 새로 만들어요.",
-     "노후 다세대·다가구가 모인 <b>저층 주택가</b>를 블록 단위 '모아주택' 여러 개로 새로 짓고, 지하주차장·공원은 동네 전체로 함께 계획해요."),
-    ("근거 법 · 규모",
-     "도시정비법 · 아파트 단지 단위",
-     "도시정비법 · 서울은 구역 1만㎡ 이상",
-     "소규모주택정비법 · 동네 전체 10만㎡ 미만, 모아주택 구역 하나는 대체로 2만㎡ 미만"),
     ("누가 조합원이 되나요?",
      "집과 그 땅을 가진 사람 중 <b>조합 설립에 동의한 사람</b>만",
      "구역 안에 땅이나 건물을 가진 사람(지상권자 포함)은 <b>모두 자동으로</b>",
@@ -699,29 +695,29 @@ GUIDE_CMP = [  # (항목, 재건축, 재개발, 모아타운)
     ("이 사업에만 있는 것",
      "<b>재건축 초과이익 환수제</b>: 조합원 이익이 일정 금액을 넘으면 일부를 부담금으로 내요",
      "<b>임대주택 의무 비율</b>과 세입자 이주 보상(주거이전비 등)",
-     "<b>정비구역 지정·추진위·관리처분 단계가 따로 없어</b> 기간이 짧고, 기반시설 공공 지원과 용적률·층수 완화가 있어요"),
+     "<b>기반시설 공공 지원</b>과 용적률·층수 완화"),
 ]
 
 GUIDE_STEPS = [  # (단계 묶음, 이름, 누가, 설명, [메모])
     ("사업 준비", "기본계획", "서울시",
      "서울시가 10년 단위로 어디를 어떻게 정비할지 큰 그림을 그려요. 5년마다 다시 살펴봐요.",
-     ["mo:모아타운은 이 단계 없이 공모로 대상지를 골라요."]),
+     []),
     ("사업 준비", "정비계획 · 정비구역 지정", "구청이 계획 → 서울시가 지정",
      "구역 경계, 용적률, 높이, 세대수 같은 계획을 세워 구역을 정해요. 주민이 동의를 모아 계획을 요청하거나 제안할 수도 있어요.",
-     ["신속통합기획 구역은 서울시가 계획 단계부터 함께해 기간을 줄여요.", "mo:모아타운은 '관리계획' 승인·고시로 대신해요."]),
+     ["신속통합기획 구역은 서울시가 계획 단계부터 함께해 기간을 줄여요."]),
     ("사업 준비", "추진위원회 승인", "구청",
      "토지등소유자 과반수 동의로 조합을 만들 준비 모임을 꾸려요. 구역 지정 전에도 꾸릴 수 있어요.",
-     ["mo:모아주택은 추진위 없이 바로 조합을 만들어요."]),
+     []),
     ("사업 준비", "조합설립인가", "구청",
      "위 표의 동의율을 채우면 조합이 법인으로 세워져요. 이때부터 조합이 사업을 이끌어요.", []),
     ("사업 시행", "사업시행계획인가", "구청",
      "건물 배치·층수·세대 구성 같은 설계를 확정하고 각종 심의를 거쳐요.",
-     ["rb:재건축은 늦어도 이 단계 전까지 재건축진단을 통과해야 해요.", "mo:모아주택은 다음 단계(관리처분)를 이 인가에 함께 담아요."]),
+     []),
     ("사업 시행", "관리처분계획인가", "구청",
      "조합원 분양신청을 받아 누가 어떤 집을 받는지, 감정평가와 분담금을 정해요.", []),
     ("사업 시행", "이주 · 철거 · 착공", "조합",
      "살던 사람들이 이사를 나가고 건물을 헐어 공사를 시작해요.",
-     ["rd:재개발은 세입자 이주 보상도 이 즈음 이뤄져요."]),
+     []),
     ("사업 완료", "준공 · 입주", "구청이 준공인가",
      "공사가 끝나 검사를 마치면 입주해요.", []),
     ("사업 완료", "이전고시 · 청산", "조합",
@@ -758,18 +754,11 @@ GUIDE_SOURCES = [
 ]
 
 
-def _note(n: str) -> str:
-    for k in (RB, RD, MO):
-        if n.startswith(k[:2] + ":"):
-            return f'{SYM[k]}{n[3:]}'
-    return n
-
-
 def guide_html() -> str:
     order = (RB, RD, MO)
     # 1) 어떤 동네에 어떤 사업?
-    pick = "".join(f'<li class="pick-{k}"><span class="cmp-k">{SYM[k]}{GT[k]}</span><b>{t}</b><span>{d}</span></li>'
-                   for k, t, d in GUIDE_PICK)
+    pick = "".join(f'<li class="pick-{k}"><span class="cmp-k">{SYM[k]}{GT[k]}</span><b>{t}</b><span>{d}</span><small>근거: {law}</small></li>'
+                   for k, t, d, law in GUIDE_PICK)
     # 2) 전체 흐름 (단계 × 사업)
     fhead = '<div class="flow-row flow-head" aria-hidden="true"><span></span><div class="flow-cols">' + "".join(
         f'<span><i>{i}</i>{ph}</span>' for i, ph in enumerate(GUIDE_PHASES, 1)) + "</div></div>"
@@ -789,7 +778,7 @@ def guide_html() -> str:
     # 4) 순서
     phases: dict[str, list[str]] = {}
     for n, (ph, name, who, desc, notes) in enumerate(GUIDE_STEPS, 1):
-        nt = "".join(f'<span class="step-note">{_note(x)}</span>' for x in notes)
+        nt = "".join(f'<span class="step-note">{x}</span>' for x in notes)
         phases.setdefault(ph, []).append(
             f'<li class="step" value="{n}"><span class="no" aria-hidden="true">{n}</span><div><b>{name}</b>'
             f'<span class="who">{who}</span><p>{desc}</p>{nt}</div></li>')
@@ -809,22 +798,20 @@ def guide_html() -> str:
     src = "".join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>' for t, u in GUIDE_SOURCES)
     return f"""
 <section id="guide" class="guide" aria-labelledby="guide-h">
-  <div class="sec-head"><h2 id="guide-h">재건축·재개발·모아타운, 한눈에</h2><span class="eyebrow">{GUIDE_ASOF} 기준 법·서울시 기준</span></div>
-  <p class="sec-lede">셋 다 낡은 집을 새로 짓는 사업이에요. 어떤 동네냐에 따라 사업이 갈리고, 그에 따라 거치는 단계와 걸리는 시간이 달라져요.</p>
+  <div class="sec-head"><h2 id="guide-h">재건축·재개발·모아타운, 한눈에</h2><span class="eyebrow">{GUIDE_ASOF} 기준 · 법령·서울시 자료</span></div>
+  <p class="sec-lede">셋 다 낡은 집을 새로 짓는 사업이에요. 동네 모습에 따라 사업이 정해지고, 다섯 단계를 거쳐요. 모아타운은 몇 단계가 없거나 합쳐져서 짧아요.</p>
 
   <h3 id="g-flow">전체 흐름</h3>
-  <p class="g-lede">먼저 동네 모습에 따라 맞는 사업이 정해져요.</p>
   <ol class="pick" aria-label="동네에 맞는 사업">{pick}</ol>
-  <p class="g-lede">그다음 다섯 단계를 거쳐요. 모아타운은 몇 단계가 없거나 합쳐져서 짧아요.</p>
   <div class="flow card">{fhead}{frows}</div>
 
   <h3 id="g-diff">무엇이 다른가요?</h3>
   <div class="cmp card">{head}{rows}</div>
-  <p class="g-foot">모아타운 안에서 실제로 집을 짓는 하나하나의 사업을 '모아주택'이라고 해요. 가로주택정비·소규모재건축·소규모재개발 같은 소규모 정비 방식으로 조합을 세워 진행해요.</p>
 
-  <h3 id="g-steps">어떤 순서로 진행되나요?</h3>
-  <p class="g-lede">재건축·재개발의 아홉 단계예요. 보통 10년 넘게 걸리고, 단계마다 주민 동의와 인가가 필요해요. 모아타운이 다른 곳은 {SYM[MO]} 표시로 적었어요.</p>
-  <div class="steps">{steps}</div>
+  <details class="g-more" id="g-steps"><summary>재건축·재개발 9단계 자세히 보기</summary>
+    <p class="g-lede">위 흐름의 다섯 단계를 실제 인가 절차로 나눈 거예요. 단계마다 주민 동의와 인가가 필요해요.</p>
+    <div class="steps">{steps}</div>
+  </details>
 
   <h3 id="g-req">서울에서 시작하려면?</h3>
   <p class="g-lede">사업 대상이 되려면 아래 조건을 갖춰야 해요. 세부 기준은 서울시 기본계획·조례·공모 기준이 바뀌면 달라질 수 있어요.</p>
@@ -846,18 +833,19 @@ def build_projects():
         items = [p for p in PROJ["items"] if p["type"] == t]
         if items:
             groups += f'<section class="projects"><h3>{KIND[t]} · {len(items)}곳</h3>' + "".join(project_card(p) for p in items) + "</section>"
-    toc = [("g-flow", "전체 흐름"), ("g-diff", "차이 비교"), ("g-steps", "진행 순서"), ("g-req", "서울 요건"), ("now", "진행 중인 동네")]
+    toc = [("g-flow", "전체 흐름"), ("g-diff", "차이 비교"), ("g-req", "서울 요건"), ("now", "진행 중인 동네")]
     toc_html = "".join(f'<a href="#{i}">{t}</a>' for i, t in toc)
     body = f"""
 <header class="page-head with-buddy">
-  <div class="eyebrow">정비사업 진행 현황 · {ym_label(PROJ['asOf'])} 기준 · {len(PROJ['items'])}곳</div>
+  <div class="eyebrow">정비사업 안내 · 진행 현황</div>
   <h1>새집으로 바뀌는 중인 동네</h1>
   {buddy("build", lines=["뚝딱뚝딱, 새집으로 바뀌는 중이에요.", "재건축·재개발·모아타운이 어떻게 다른지도 정리해 뒀어요.", "단계는 바뀔 수 있으니 출처를 꼭 확인해 주세요."])}
-  <p class="lede">재건축·재개발·모아타운이 진행 중인 동네를 모았어요. 언론 보도와 서울시 발표를 바탕으로 정리했고, 위치는 동 단위 대략값이에요. 기준월 이후에 단계가 바뀌었을 수 있으니 항목마다 붙은 출처를 확인해 주세요. 지도에도 같은 동네를 기호로 표시했어요.</p>
+  <p class="lede">재건축·재개발·모아타운이 무엇이고 어떻게 진행되는지 정리하고, 서울에서 지금 진행 중인 동네를 모았어요.</p>
 </header>
 <nav class="toc" aria-label="이 페이지 차례">{toc_html}</nav>
 {guide_html()}
-<div id="now" class="now-head"><h2>진행 중인 동네</h2><span class="eyebrow">{ym_label(PROJ['asOf'])} 기준 · {len(PROJ['items'])}곳</span></div>
+<div id="now" class="now-head"><h2>진행 중인 동네</h2><span class="eyebrow">{ym_label(PROJ['asOf'])} 기준 · {len(PROJ['items'])}곳</span>
+<p class="g-lede">언론 보도와 서울시 발표를 바탕으로 정리했고, 위치는 동 단위 대략값이에요. 기준월 이후에 단계가 바뀌었을 수 있으니 항목마다 붙은 출처를 확인해 주세요. 지도에도 같은 동네를 기호로 표시했어요.</p></div>
 {groups}
 """
     layout("projects/", f"재건축·재개발·모아타운 차이와 절차, 서울 정비사업 진행 현황 ({ym_label(PROJ['asOf'])})",
