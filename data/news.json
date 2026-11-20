@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-19T13:17+09:00",
+ "updated": "2026-11-20T13:12+09:00",
  "items": [
   {
    "id": "seoul-470675",
@@ -9,6 +9,16 @@
    "dept": "주택실 부동산정책개발센터",
    "title": "서울 아파트 매매 실거래가격 상승세 지속...전세가격 상승폭 확대",
    "url": "https://www.seoul.go.kr/news/news_report.do#view/470675",
+   "src": "seoul"
+  },
+  {
+   "id": "seoul-470744",
+   "date": "2026-11-19",
+   "time": "06:08",
+   "org": "서울특별시",
+   "dept": "주택실 주거정비과",
+   "title": "제23차 서울시 정비사업 통합심의위원회 개최결과",
+   "url": "https://www.seoul.go.kr/news/news_report.do#view/470744",
    "src": "seoul"
   },
   {
