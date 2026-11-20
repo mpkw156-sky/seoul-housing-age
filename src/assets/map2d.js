@@ -20,31 +20,69 @@ const fmt = n => n.toLocaleString("ko-KR");
 const short = g => g.length > 2 ? g.replace(/구$/, "") : g;
 const binOf = (v, b) => { const i = b.findIndex(x => v < x); return i === -1 ? 4 : i; };
 
+/* 아이소메트릭 지도: 북쪽을 위로 둔 채 비스듬히 내려다본 모습이에요.
+   구마다 같은 두께의 판(옆면 = 같은 색을 조금 어둡게 겹쳐 쌓음)으로 그리고, 고른 구는 살짝 떠올라요. */
 const svg = document.getElementById("map");
-const NS = "http://www.w3.org/2000/svg";
-svg.setAttribute("viewBox", `-6 -6 ${GEO.w + 12} ${GEO.h + 12}`);
+const NS = "http://www.w3.org/2000/svg", XL = "http://www.w3.org/1999/xlink";
+const K = GEO.k || 1, DEPTH = GEO.depth || 0, LIFT = 7, PIN = 13;
+const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+svg.setAttribute("viewBox", `-8 ${-8 - PIN} ${GEO.w + 16} ${GEO.h + DEPTH + 24 + PIN}`);
 const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
-const gFill = mk("g", {}), gCand = mk("g", {}), gHi = mk("g", {}), gLbl = mk("g", {}), gMk = mk("g", {});
-svg.append(gFill, gCand, gHi, gLbl, gMk);
-const paths = {}, labels = {};
-for (const [gu, p] of Object.entries(GEO.gu)) {
+const use = (id, attrs) => { const u = mk("use", attrs); u.setAttribute("href", "#" + id); u.setAttributeNS(XL, "xlink:href", "#" + id); return u; };
+const defs = mk("defs", {});
+const gShadow = mk("g", { class: "iso-shadow", "aria-hidden": "true" }), gWall = mk("g", { class: "iso-wall", "aria-hidden": "true" });
+const gFill = mk("g", {}), gCand = mk("g", {}), gHi = mk("g", { class: "iso-lift", "aria-hidden": "true" }), gLbl = mk("g", {}), gMk = mk("g", {});
+svg.append(defs, gShadow, gWall, gFill, gCand, gHi, gLbl, gMk);
+gShadow.append(mk("ellipse", { cx: GEO.w / 2, cy: GEO.h + DEPTH + 8, rx: GEO.w * 0.46, ry: 9 }));
+const paths = {}, labels = {}, walls = {}, ids = {};
+Object.keys(GEO.gu).forEach((gu, i) => {
+  const p = GEO.gu[gu], id = "iso-g" + i; ids[gu] = id;
+  defs.append(mk("path", { id, d: p.d }));
+  const w = mk("g", {}); for (let k = DEPTH; k >= 1; k--) w.append(use(id, { y: k })); gWall.append(w); walls[gu] = w;
   const el = mk("path", { d: p.d, class: "gu", tabindex: "0", role: "button" }); el.dataset.gu = gu;
   gFill.append(el); paths[gu] = el;
   const c = mk("path", { d: p.d, class: "cand" }); c.dataset.gu = gu; c.style.display = "none"; gCand.append(c);
   const t = mk("text", { x: p.cx, y: p.cy + 4, class: "lbl" }); t.textContent = short(gu); gLbl.append(t); labels[gu] = t;
-}
-const hi = mk("path", { class: "outline" }); hi.style.display = "none"; gHi.append(hi);
+});
 
-const markerEls = DATA.markers.map((m, i) => {
+// 정비사업 표시: 바닥에 그림자, 짧은 깃대 위에 기호 (■ 재건축 · ● 재개발 · ▲ 모아타운)
+const MK = DATA.markers.map(m => ({ ...m, y: m.y * K }));
+const markerEls = MK.map((m, i) => {
   const g = mk("g", { class: "mk " + m.t, tabindex: "0", role: "button", "aria-label": `${m.name} (${m.gu}) ${KIND[m.t]}` });
   g.dataset.i = i;
-  g.append(mk("circle", { class: "hit", cx: m.x, cy: m.y, r: 13 }));
+  const top = m.y - PIN;
+  g.append(mk("ellipse", { class: "foot", cx: m.x, cy: m.y, rx: 4.5, ry: 2 }));
+  g.append(mk("line", { class: "stick", x1: m.x, y1: m.y, x2: m.x, y2: top + 4 }));
+  g.append(mk("circle", { class: "hit", cx: m.x, cy: top, r: 13 }));
   let s;
-  if (m.t === "rebuild") s = mk("rect", { class: "shape", x: m.x - 6, y: m.y - 6, width: 12, height: 12, rx: 2 });
-  else if (m.t === "redev") s = mk("circle", { class: "shape", cx: m.x, cy: m.y, r: 6.5 });
-  else s = mk("path", { class: "shape", d: `M${m.x} ${m.y - 7.5}L${m.x + 7.5} ${m.y + 5.5}H${m.x - 7.5}Z` });
+  if (m.t === "rebuild") s = mk("rect", { class: "shape", x: m.x - 6, y: top - 6, width: 12, height: 12, rx: 2 });
+  else if (m.t === "redev") s = mk("circle", { class: "shape", cx: m.x, cy: top, r: 6.5 });
+  else s = mk("path", { class: "shape", d: `M${m.x} ${top - 7.5}L${m.x + 7.5} ${top + 5.5}H${m.x - 7.5}Z` });
   g.append(s); gMk.append(g); return g;
 });
+// 깃대가 구 이름을 가리면, 이름을 아래·위·왼쪽·오른쪽 중 비어 있는 자리로 옮겨요
+const pinBox = m => [m.x - 8, m.y - PIN - 8, m.x + 8, m.y + 3];
+const lblBox = (x, y, half) => [x - half, y - 12, x + half, y + 3];
+const clash = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+for (const [gu, t] of Object.entries(labels)) {
+  const cx = +t.getAttribute("x"), cy = +t.getAttribute("y"), half = short(gu).length * 6.5 + 3;
+  const pins = MK.map(pinBox), free = (x, y) => !pins.some(p => clash(lblBox(x, y, half), p));
+  if (free(cx, cy)) continue;
+  const near = MK.filter(m => clash(lblBox(cx, cy, half + 30), pinBox(m)));
+  const lo = Math.max(...near.map(m => m.y)), hi = Math.min(...near.map(m => m.y - PIN));
+  const tries = [[cx, lo + 15], [cx, hi - 10], [cx - half - 14, cy], [cx + half + 14, cy], [cx, lo + 30]];
+  const ok = tries.find(([x, y]) => free(x, y)) || tries[0];
+  t.setAttribute("x", ok[0]); t.setAttribute("y", ok[1]);
+}
+// 앞(남쪽)에 있는 깃대가 뒤 깃대를 가리도록 위쪽(북쪽)부터 차례로 그려요
+markerEls.map((g, i) => [g, MK[i].y]).sort((a, b) => a[1] - b[1]).forEach(([g]) => gMk.append(g));
+
+// 옆면 색: 윗면 색을 어둡게 섞어요(아래로 갈수록 조금 더 어둡게)
+const shade = (hex, f) => { const h = hex.replace("#", ""); return "#" + [0, 2, 4].map(i => Math.round(parseInt(h.substr(i, 2), 16) * f).toString(16).padStart(2, "0")).join(""); };
+function paintWalls(gu, color) {
+  const w = walls[gu], n = w.children.length;
+  [...w.children].forEach((u, j) => u.setAttribute("fill", shade(color, 0.58 + 0.16 * (j / Math.max(1, n - 1)))));
+}
 
 function facts() {
   const rows = DATA.rows;
@@ -63,7 +101,8 @@ function render() {
   const colors = RAMP.map(v => cs.getPropertyValue(v).trim());
   for (const [gu, el] of Object.entries(paths)) {
     const b = binOf(byGu[gu][metric], M.breaks);
-    el.style.fill = colors[b];
+    el.style.fill = colors[b]; el.dataset.c = colors[b];
+    if (/^#[0-9a-f]{6}$/i.test(colors[b])) paintWalls(gu, colors[b]);
     el.setAttribute("aria-label", `${gu} ${byGu[gu][metric]}${M.unit}`);
     labels[gu].setAttribute("class", "lbl " + (lum(colors[b]) < 0.35 ? "on-dark" : "on-light"));
   }
@@ -105,15 +144,29 @@ function table() {
 const tip = document.getElementById("tip"), box = document.getElementById("mapbox");
 function placeTip(cx, cy) {
   const bw = box.clientWidth, sv = svg.getBoundingClientRect(), bb = box.getBoundingClientRect();
-  const scale = sv.width / (GEO.w + 12);
-  let x = (cx + 6) * scale + (sv.left - bb.left), y = (cy + 6) * scale + (sv.top - bb.top);
+  const vb = svg.viewBox.baseVal, scale = sv.width / vb.width;
+  let x = (cx - vb.x) * scale + (sv.left - bb.left), y = (cy - vb.y) * scale + (sv.top - bb.top);
   const tw = tip.offsetWidth, th = tip.offsetHeight;
   x = Math.min(Math.max(4, x + 14), bw - tw - 4);
   y = y - th - 14 < 0 ? y + 18 : y - th - 14;
   tip.style.left = x + "px"; tip.style.top = y + "px";
 }
+let lifted = null;
+function drop() {
+  gHi.replaceChildren(); if (lifted) labels[lifted].removeAttribute("transform"); lifted = null;
+}
+function lift(gu) {
+  drop(); lifted = gu;
+  const id = ids[gu], color = paths[gu].dataset.c || "#999999", L = reduceMotion() ? 0 : LIFT;
+  const g = mk("g", { class: "lifted" + (L ? " anim" : "") });
+  for (let k = DEPTH; k >= -L + 1; k--) g.append(use(id, { y: k, fill: shade(color, k > 0 ? 0.58 + 0.16 * (1 - k / DEPTH) : 0.74) }));
+  const t = use(id, { y: -L, class: "lift-top" }); t.style.fill = color; g.append(t);
+  gHi.append(g);
+  if (L) labels[gu].setAttribute("transform", `translate(0 ${-L})`);
+  gLbl.append(labels[gu]);
+}
 function clearFocus() {
-  tip.hidden = true; hi.style.display = "none";
+  tip.hidden = true; drop();
   document.querySelectorAll("#rows .row.hl").forEach(r => r.classList.remove("hl"));
   markerEls.forEach(e => e.classList.remove("on"));
   document.querySelectorAll(".site.on").forEach(e => e.classList.remove("on"));
@@ -121,7 +174,7 @@ function clearFocus() {
 function focusGu(gu) {
   clearFocus(); if (!gu) return;
   const r = byGu[gu];
-  hi.setAttribute("d", GEO.gu[gu].d); hi.style.display = "";
+  lift(gu);
   document.querySelectorAll("#rows .row").forEach(x => x.classList.toggle("hl", x.dataset.gu === gu));
   tip.innerHTML = `<h4>${gu}</h4><dl>
     <dt>서른 살 넘은 집</dt><dd>${r.share30}%</dd>
@@ -130,14 +183,14 @@ function focusGu(gu) {
     <dt>스무 살 넘은 저층</dt><dd>${r.low20}%</dd>
     <dt>서른 살 넘은 저층</dt><dd>${r.low30}% · ${fmt(r.lowOld30)}호</dd>
     <dt>${DATA.y0} → ${DATA.y1}</dt><dd>${r.share30_prev}% → ${r.share30}%</dd></dl>`;
-  tip.hidden = false; placeTip(GEO.gu[gu].cx, GEO.gu[gu].cy);
+  tip.hidden = false; placeTip(GEO.gu[gu].cx, GEO.gu[gu].cy - (reduceMotion() ? 0 : LIFT));
 }
 function focusSite(i) {
-  clearFocus(); const m = DATA.markers[i]; if (!m) return;
+  clearFocus(); const m = MK[i]; if (!m) return;
   markerEls[i].classList.add("on");
   document.querySelectorAll(`.site[data-i="${i}"]`).forEach(e => e.classList.add("on"));
   tip.innerHTML = `<div class="kind">${KIND[m.t]}</div><h4>${m.name} · ${m.gu}</h4><ul>${m.items.map(x => `<li>${x}</li>`).join("")}</ul>`;
-  tip.hidden = false; placeTip(m.x, m.y);
+  tip.hidden = false; placeTip(m.x, m.y - PIN);
 }
 function targetOf(e) {
   const g = e.target.closest && e.target.closest("g.mk");

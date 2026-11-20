@@ -182,6 +182,14 @@ for f in GEOJSON["features"]:
     GEO3D["gu"][name] = {"p": polys3d, "cx": cx, "cy": cy}
 assert set(SLUG) == set(GU), "geo names do not match data names"
 
+# 지도 탭의 아이소메트릭(비스듬히 내려다본) 지도: 북쪽을 위로 둔 채 세로를 눕히고(ISO_K), 두께(ISO_DEPTH)를 줍니다.
+# 3D 보기와 자치구 페이지의 작은 지도는 GEO2D/GEO3D를 그대로 씁니다.
+ISO_K, ISO_DEPTH = 0.62, 12
+_xy = re.compile(r"(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)")
+GEOISO = {"w": GW, "h": round(GH * ISO_K, 1), "k": ISO_K, "depth": ISO_DEPTH,
+          "gu": {n: {"d": _xy.sub(lambda m: f"{m.group(1)},{float(m.group(2)) * ISO_K:.1f}", g["d"]),
+                     "cx": g["cx"], "cy": round(g["cy"] * ISO_K, 1)} for n, g in GEO2D["gu"].items()}}
+
 MARKERS = []
 for p in PROJ["items"]:
     x, y = proj(p["lon"], p["lat"])
@@ -515,7 +523,7 @@ def build_map():
     layout("map/", f"서울 주택 노후도 지도 – 25개 자치구 주택·아파트 노후도 ({Y1})",
            f"서울 25개 자치구의 30년 이상 노후 주택 비율을 지도로 봅니다. {Y1}년 서울 전체 {SEOUL['share30']}%, "
            f"아파트 {SEOUL['aptShare30']}%. 아파트와 단독·다세대 주택을 나눠 매년 갱신합니다.",
-           body, active="/map/", css=("map2d.css", "map3d.css"), js=("map2d.js",), data=map_payload(), geo=GEO2D)
+           body, active="/map/", css=("map2d.css", "map3d.css"), js=("map2d.js",), data=map_payload(), geo=GEOISO)
 
 
 def build_3d():
